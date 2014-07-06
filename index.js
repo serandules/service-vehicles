@@ -1,6 +1,6 @@
 var utils = require('utils');
 var Vehicle = require('vehicle');
-var mongutil = require('mongutil');
+var mongutils = require('mongutils');
 var sanitizer = require('./sanitizer');
 var knox = require('knox');
 var path = require('path');
@@ -161,7 +161,7 @@ app.post('/vehicles', function (req, res) {
  * /vehicles/51bfd3bd5a51f1722d000001
  */
 app.get('/vehicles/:id', function (req, res) {
-    if (!mongutil.objectId(req.params.id)) {
+    if (!mongutils.objectId(req.params.id)) {
         res.send(404, {
             error: 'specified vehicle cannot be found'
         });
@@ -208,7 +208,7 @@ app.get('/vehicles/:id', function (req, res) {
  * /vehicles/51bfd3bd5a51f1722d000001
  */
 app.post('/vehicles/:id', function (req, res) {
-    if (!mongutil.objectId(req.params.id)) {
+    if (!mongutils.objectId(req.params.id)) {
         res.send(404, {
             error: 'specified vehicle cannot be found'
         });

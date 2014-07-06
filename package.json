@@ -9,7 +9,7 @@
     "dependencies": {
         "utils": "serandules/utils#master",
         "vehicle": "serandules/vehicle#master",
-        "mongutil": "serandules/mongutil#master",
+        "mongutils": "serandules/mongutils#master",
         "formida": "serandules/formida#master",
         "knox": "0.9.0",
         "knox-mpu": "0.1.6",
