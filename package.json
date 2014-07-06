@@ -1,0 +1,22 @@
+{
+    "name": "vehicle-service",
+    "description": "vehicle-service",
+    "version": "0.0.0",
+    "author": {
+        "name": "serandives",
+        "email": "serandives@gmail.com"
+    },
+    "dependencies": {
+        "utils": "serandules/utils#master",
+        "vehicle": "serandules/vehicle#master",
+        "mongutil": "serandules/mongutil#master",
+        "formida": "serandules/formida#master",
+        "knox": "0.9.0",
+        "knox-mpu": "0.1.6",
+        "node-uuid": "1.4.1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/serandules/vehicle-service.git"
+    }
+}
