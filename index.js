@@ -11,8 +11,8 @@ var MultiPartUpload = require('knox-mpu');
 
 var s3Client = knox.createClient({
     secure: false,
-    key: '',
-    secret: '',
+    key: 'key',
+    secret: 'secret',
     bucket: 'auto.serandives.com'
 });
 
