@@ -6,15 +6,9 @@ var knox = require('knox');
 var path = require('path');
 var uuid = require('node-uuid');
 var formida = require('formida');
-
+var agent = require('hub-agent');
+var async = require('async');
 var MultiPartUpload = require('knox-mpu');
-
-var s3Client = knox.createClient({
-    secure: false,
-    key: 'key',
-    secret: 'secret',
-    bucket: 'auto.serandives.com'
-});
 
 var express = require('express');
 var app = module.exports = express();
@@ -30,6 +24,28 @@ var paging = {
 var fields = {
     '*': true
 };
+
+async.parallel({
+    key: function (cb) {
+        agent.config('aws-key', function (data) {
+            console.log(data);
+            cb(false, data);
+        });
+    },
+    secret: function (cb) {
+        agent.config('aws-secret', function (data) {
+            console.log(data);
+            cb(false, data);
+        });
+    }
+}, function (err, results) {
+    s3Client = knox.createClient({
+        secure: false,
+        key: results.key,
+        secret: results.secret,
+        bucket: 'auto.serandives.com'
+    });
+});
 
 /**
  * { "email": "ruchira@serandives.com", "password": "mypassword" }
@@ -107,7 +123,7 @@ app.post('/vehicles', function (req, res) {
     form.on('file', function (part) {
         console.log('file field');
         queue++;
-        var name = uuid.v4() + path.extname(part.filename);
+        var name = uuid.v4();
         var upload = new MultiPartUpload({
             client: s3Client,
             objectName: name,
