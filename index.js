@@ -28,13 +28,11 @@ var fields = {
 async.parallel({
     key: function (cb) {
         agent.config('aws-key', function (data) {
-            console.log(data);
             cb(false, data);
         });
     },
     secret: function (cb) {
         agent.config('aws-secret', function (data) {
-            console.log(data);
             cb(false, data);
         });
     }
