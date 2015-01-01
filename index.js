@@ -92,35 +92,48 @@ var create = function (err, data, success, failed, req, res) {
     });
 };
 
-var update = function (err, data, success, failed, req, res) {
-    console.log('update callback');
-    if (err) {
-        clean(success, failed);
-        res.send(400, {
-            error: err
-        });
-        return;
-    }
-    var photos = [];
-    var id = req.params.id;
-    success.forEach(function (suc) {
-        photos.push(suc.name);
-    });
-    data.photos = data.photos.concat(photos);
-    Vehicle.update({
-        _id: id
-    }, data, function (err, vehicle) {
+var update = function (old) {
+    return function (err, data, success, failed, req, res) {
+        console.log('update callback');
         if (err) {
-            res.send(500, {
+            clean(success, failed);
+            res.send(400, {
                 error: err
             });
             return;
         }
-        //TODO: handle 404 case
-        res.send({
-            error: false
+        var photos = [];
+        var id = req.params.id;
+        success.forEach(function (suc) {
+            photos.push(suc.name);
         });
-    });
+        photos = data.photos.concat(photos);
+        data.photos = photos;
+        Vehicle.update({
+            _id: id
+        }, data, function (err, vehicle) {
+            if (err) {
+                res.send(500, {
+                    error: err
+                });
+                return;
+            }
+            //TODO: handle 404 case
+            res.send({
+                error: false
+            });
+        });
+        old.photos.forEach(function (photo) {
+            var index = photos.indexOf(photo);
+            if (index !== -1) {
+                return;
+            }
+            //deleting obsolete photos
+            s3Client.deleteFile(photo, function (err, res) {
+                console.log('file : ' + photo + ' is deleted');
+            });
+        });
+    };
 };
 
 var process = function (req, res, done) {
@@ -204,7 +217,7 @@ var process = function (req, res, done) {
  * { "email": "ruchira@serandives.com", "password": "mypassword" }
  */
 app.post('/vehicles', function (req, res) {
-    process(req, req, create);
+    process(req, res, create);
 });
 
 /**
@@ -265,7 +278,23 @@ app.put('/vehicles/:id', function (req, res) {
         });
         return;
     }
-    process(req, res, update);
+    Vehicle.findOne({
+        _id: id
+    }).exec(function (err, vehicle) {
+        if (err) {
+            res.send(500, {
+                error: err
+            });
+            return;
+        }
+        if (!vehicle) {
+            res.send(404, {
+                error: 'specified vehicle cannot be found'
+            });
+            return;
+        }
+        process(req, res, update(vehicle));
+    });
 });
 
 /**
