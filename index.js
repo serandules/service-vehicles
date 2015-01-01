@@ -127,7 +127,8 @@ var process = function (req, res, done) {
     var data;
     var success = [];
     var failed = [];
-    var queue = 0;
+    //queue is started from 1 as next() is called always at form end
+    var queue = 1;
     var next = function (err) {
         if (--queue > 0) {
             return;
@@ -195,6 +196,7 @@ var process = function (req, res, done) {
     });
     form.on('end', function () {
         console.log('form end');
+        next();
     });
     form.parse(req);
 };
