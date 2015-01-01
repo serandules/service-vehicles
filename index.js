@@ -65,7 +65,7 @@ var clean = function (success, failed) {
 
 };
 
-var add = function (err, data, success, failed, res) {
+var create = function (err, data, success, failed, req, res) {
     console.log('add callback');
     if (err) {
         clean(success, failed);
@@ -92,7 +92,7 @@ var add = function (err, data, success, failed, res) {
     });
 };
 
-var update = function (err, id, data, success, failed, res) {
+var update = function (err, data, success, failed, req, res) {
     console.log('update callback');
     if (err) {
         clean(success, failed);
@@ -102,6 +102,7 @@ var update = function (err, id, data, success, failed, res) {
         return;
     }
     var photos = [];
+    var id = req.params.id;
     success.forEach(function (suc) {
         photos.push(suc.name);
     });
@@ -122,10 +123,7 @@ var update = function (err, id, data, success, failed, res) {
     });
 };
 
-/**
- * { "email": "ruchira@serandives.com", "password": "mypassword" }
- */
-app.post('/vehicles', function (req, res) {
+var process = function (req, res, done) {
     var data;
     var success = [];
     var failed = [];
@@ -134,7 +132,7 @@ app.post('/vehicles', function (req, res) {
         if (--queue > 0) {
             return;
         }
-        add(null, data, success, failed, res);
+        done(null, data, success, failed, req, res);
     };
     var form = new formida.IncomingForm();
     form.on('progress', function (rec, exp) {
@@ -189,16 +187,22 @@ app.post('/vehicles', function (req, res) {
     });
     form.on('error', function (err) {
         console.log(err);
-        add(err, data, success, failed, res);
+        done(err, data, success, failed, req, res);
     });
     form.on('aborted', function () {
         console.log('request was aborted');
-        add(true, data, success, failed, res);
+        done(true, data, success, failed, req, res);
     });
     form.on('end', function () {
         console.log('form end');
     });
     form.parse(req);
+};
+/**
+ * { "email": "ruchira@serandives.com", "password": "mypassword" }
+ */
+app.post('/vehicles', function (req, res) {
+    process(req, req, create);
 });
 
 /**
@@ -259,80 +263,7 @@ app.put('/vehicles/:id', function (req, res) {
         });
         return;
     }
-
-    var data;
-    var success = [];
-    var failed = [];
-    var queue = 0;
-    var next = function (err) {
-        if (--queue > 0) {
-            return;
-        }
-        update(null, id, data, success, failed, res);
-    };
-    var form = new formida.IncomingForm();
-    form.on('progress', function (rec, exp) {
-        console.log('received >>> ' + rec);
-        console.log('expected >>> ' + exp);
-    });
-    form.on('field', function (name, value) {
-        if (name !== 'data') {
-            return;
-        }
-        console.log(name + ' ' + value);
-        data = JSON.parse(value);
-    });
-    form.on('file', function (part) {
-        console.log('file field');
-        queue++;
-        var name = uuid.v4();
-        var upload = new MultiPartUpload({
-            client: s3Client,
-            objectName: name,
-            headers: {
-                'Content-Type': part.headers['content-type'],
-                'x-amz-acl': 'public-read'
-            },
-            stream: part
-        });
-        upload.on('initiated', function () {
-            console.log('mpu initiated');
-        });
-        upload.on('uploading', function () {
-            console.log('mpu uploading');
-        });
-        upload.on('uploaded', function () {
-            console.log('mpu uploaded');
-        });
-        upload.on('error', function (err) {
-            console.log('mpu error');
-            failed.push({
-                name: name,
-                error: err
-            });
-            next(err);
-        });
-        upload.on('completed', function (body) {
-            console.log('mpu complete');
-            success.push({
-                name: name,
-                body: body
-            });
-            next();
-        });
-    });
-    form.on('error', function (err) {
-        console.log(err);
-        update(err, id, data, success, failed, res);
-    });
-    form.on('aborted', function () {
-        console.log('request was aborted');
-        update(true, id, data, success, failed, res);
-    });
-    form.on('end', function () {
-        console.log('form end');
-    });
-    form.parse(req);
+    process(req, res, update);
 });
 
 /**
