@@ -1,4 +1,4 @@
-var debug = require('debug')('serandules-vehicle-service');
+var debug = require('debug')('serandules:vehicle-service');
 var utils = require('utils');
 var Vehicle = require('vehicle');
 var mongutils = require('mongutils');
