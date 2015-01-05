@@ -1,3 +1,4 @@
+var debug = require('debug')('serandules-vehicle-service');
 var utils = require('utils');
 var Vehicle = require('vehicle');
 var mongutils = require('mongutils');
@@ -66,7 +67,7 @@ var clean = function (success, failed) {
 };
 
 var create = function (err, data, success, failed, req, res) {
-    console.log('add callback');
+    debug('add callback');
     if (err) {
         clean(success, failed);
         res.send(400, {
@@ -94,7 +95,7 @@ var create = function (err, data, success, failed, req, res) {
 
 var update = function (old) {
     return function (err, data, success, failed, req, res) {
-        console.log('update callback');
+        debug('update callback');
         if (err) {
             clean(success, failed);
             res.send(400, {
@@ -130,7 +131,7 @@ var update = function (old) {
             }
             //deleting obsolete photos
             s3Client.deleteFile(photo, function (err, res) {
-                console.log('file : ' + photo + ' is deleted');
+                debug('file : ' + photo + ' is deleted');
             });
         });
     };
@@ -150,18 +151,18 @@ var process = function (req, res, done) {
     };
     var form = new formida.IncomingForm();
     form.on('progress', function (rec, exp) {
-        console.log('received >>> ' + rec);
-        console.log('expected >>> ' + exp);
+        debug('received >>> ' + rec);
+        debug('expected >>> ' + exp);
     });
     form.on('field', function (name, value) {
         if (name !== 'data') {
             return;
         }
-        console.log(name + ' ' + value);
+        debug(name + ' ' + value);
         data = JSON.parse(value);
     });
     form.on('file', function (part) {
-        console.log('file field');
+        debug('file field');
         queue++;
         var name = uuid.v4();
         var upload = new MultiPartUpload({
@@ -174,16 +175,16 @@ var process = function (req, res, done) {
             stream: part
         });
         upload.on('initiated', function () {
-            console.log('mpu initiated');
+            debug('mpu initiated');
         });
         upload.on('uploading', function () {
-            console.log('mpu uploading');
+            debug('mpu uploading');
         });
         upload.on('uploaded', function () {
-            console.log('mpu uploaded');
+            debug('mpu uploaded');
         });
         upload.on('error', function (err) {
-            console.log('mpu error');
+            debug('mpu error');
             failed.push({
                 name: name,
                 error: err
@@ -191,7 +192,7 @@ var process = function (req, res, done) {
             next(err);
         });
         upload.on('completed', function (body) {
-            console.log('mpu complete');
+            debug('mpu complete');
             success.push({
                 name: name,
                 body: body
@@ -200,15 +201,15 @@ var process = function (req, res, done) {
         });
     });
     form.on('error', function (err) {
-        console.log(err);
+        debug(err);
         done(err, data, success, failed, req, res);
     });
     form.on('aborted', function () {
-        console.log('request was aborted');
+        debug('request was aborted');
         done(true, data, success, failed, req, res);
     });
     form.on('end', function () {
-        console.log('form end');
+        debug('form end');
         next();
     });
     form.parse(req);
