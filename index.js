@@ -14,6 +14,8 @@ var MultiPartUpload = require('knox-mpu');
 var express = require('express');
 var app = module.exports = express();
 
+var s3Client;
+
 app.use(express.json());
 
 var paging = {
@@ -26,18 +28,22 @@ var fields = {
     '*': true
 };
 
+debug('*****************************************************************************************************************');
 async.parallel({
     key: function (cb) {
         agent.config('aws-key', function (data) {
+            debug('-------------------------------------------aws-key------------------------------------------');
             cb(false, data);
         });
     },
     secret: function (cb) {
         agent.config('aws-secret', function (data) {
+            debug('-------------------------------------------aws-secret------------------------------------------');
             cb(false, data);
         });
     }
 }, function (err, results) {
+    debug('-------------------------------------------creating s3client------------------------------------------');
     s3Client = knox.createClient({
         secure: false,
         key: results.key,
