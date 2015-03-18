@@ -12,11 +12,11 @@ var async = require('async');
 var MultiPartUpload = require('knox-mpu');
 
 var express = require('express');
-var app = module.exports = express();
+var router = express.Router();
+
+module.exports = router;
 
 var s3Client;
-
-app.use(express.json());
 
 var paging = {
     start: 0,
@@ -28,22 +28,22 @@ var fields = {
     '*': true
 };
 
-debug('*****************************************************************************************************************');
 async.parallel({
     key: function (cb) {
-        agent.config('aws-key', function (data) {
-            debug('-------------------------------------------aws-key------------------------------------------');
-            cb(false, data);
+        agent.config(function (config) {
+            config('aws-key', function (data) {
+                cb(false, data);
+            });
         });
     },
     secret: function (cb) {
-        agent.config('aws-secret', function (data) {
-            debug('-------------------------------------------aws-secret------------------------------------------');
-            cb(false, data);
+        agent.config(function (config) {
+            config('aws-secret', function (data) {
+                cb(false, data);
+            });
         });
     }
 }, function (err, results) {
-    debug('-------------------------------------------creating s3client------------------------------------------');
     s3Client = knox.createClient({
         secure: false,
         key: results.key,
@@ -223,14 +223,14 @@ var process = function (req, res, done) {
 /**
  * { "email": "ruchira@serandives.com", "password": "mypassword" }
  */
-app.post('/vehicles', function (req, res) {
+router.post('/vehicles', function (req, res) {
     process(req, res, create);
 });
 
 /**
  * /vehicles/51bfd3bd5a51f1722d000001
  */
-app.get('/vehicles/:id', function (req, res) {
+router.get('/vehicles/:id', function (req, res) {
     if (!mongutils.objectId(req.params.id)) {
         res.send(404, {
             error: 'specified vehicle cannot be found'
@@ -277,7 +277,7 @@ app.get('/vehicles/:id', function (req, res) {
 /**
  * /vehicles/51bfd3bd5a51f1722d000001
  */
-app.put('/vehicles/:id', function (req, res) {
+router.put('/vehicles/:id', function (req, res) {
     var id = req.params.id;
     if (!mongutils.objectId(id)) {
         res.send(404, {
@@ -307,7 +307,7 @@ app.put('/vehicles/:id', function (req, res) {
 /**
  * /vehicles?data={}
  */
-app.get('/vehicles', function (req, res) {
+router.get('/vehicles', function (req, res) {
     var data = req.query.data ? JSON.parse(req.query.data) : {};
     sanitizer.clean(data.criteria || (data.criteria = {}));
     utils.merge(data.paging || (data.paging = {}), paging);
