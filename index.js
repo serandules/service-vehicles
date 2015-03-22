@@ -1,4 +1,4 @@
-var debug = require('debug')('serandules:vehicle-service');
+var log = require('logger')('vehicle-service:index');
 var utils = require('utils');
 var Vehicle = require('vehicle');
 var mongutils = require('mongutils');
@@ -20,7 +20,7 @@ var s3Client;
 
 var paging = {
     start: 0,
-    count: 1000,
+    count: 40,
     sort: ''
 };
 
@@ -28,19 +28,21 @@ var fields = {
     '*': true
 };
 
+var bucket = 'autos.serandives.com';
+
+var image = function (id) {
+    return 'images/' + id;
+};
+
 async.parallel({
     key: function (cb) {
-        agent.config(function (config) {
-            config('aws-key', function (data) {
-                cb(false, data);
-            });
+        agent.config('aws-key', function (data) {
+            cb(false, data);
         });
     },
     secret: function (cb) {
-        agent.config(function (config) {
-            config('aws-secret', function (data) {
-                cb(false, data);
-            });
+        agent.config('aws-secret', function (data) {
+            cb(false, data);
         });
     }
 }, function (err, results) {
@@ -48,7 +50,7 @@ async.parallel({
         secure: false,
         key: results.key,
         secret: results.secret,
-        bucket: 'auto.serandives.com'
+        bucket: bucket
     });
 });
 
@@ -73,10 +75,10 @@ var clean = function (success, failed) {
 };
 
 var create = function (err, data, success, failed, req, res) {
-    debug('add callback');
+    log.debug('add callback');
     if (err) {
         clean(success, failed);
-        res.send(400, {
+        res.status(400).send({
             error: err
         });
         return;
@@ -88,7 +90,7 @@ var create = function (err, data, success, failed, req, res) {
     data.photos = photos;
     Vehicle.create(data, function (err, vehicle) {
         if (err) {
-            res.send(400, {
+            res.status(400).send({
                 error: 'error while adding new vehicle'
             });
             return;
@@ -101,10 +103,10 @@ var create = function (err, data, success, failed, req, res) {
 
 var update = function (old) {
     return function (err, data, success, failed, req, res) {
-        debug('update callback');
+        log.debug('update callback');
         if (err) {
             clean(success, failed);
-            res.send(400, {
+            res.status(400).send({
                 error: err
             });
             return;
@@ -120,7 +122,7 @@ var update = function (old) {
             _id: id
         }, data, function (err, vehicle) {
             if (err) {
-                res.send(500, {
+                res.status(500).send({
                     error: err
                 });
                 return;
@@ -137,7 +139,7 @@ var update = function (old) {
             }
             //deleting obsolete photos
             s3Client.deleteFile(photo, function (err, res) {
-                debug('file : ' + photo + ' is deleted');
+                log.debug('file:%s is deleted', photo);
             });
         });
     };
@@ -157,20 +159,20 @@ var process = function (req, res, done) {
     };
     var form = new formida.IncomingForm();
     form.on('progress', function (rec, exp) {
-        debug('received >>> ' + rec);
-        debug('expected >>> ' + exp);
+        log.debug('received >>> %s', rec);
+        log.debug('expected >>> %s', exp);
     });
     form.on('field', function (name, value) {
         if (name !== 'data') {
             return;
         }
-        debug(name + ' ' + value);
+        log.debug('%s %s', name, value);
         data = JSON.parse(value);
     });
     form.on('file', function (part) {
-        debug('file field');
+        log.debug('file field');
         queue++;
-        var name = uuid.v4();
+        var name = image(uuid.v4());
         var upload = new MultiPartUpload({
             client: s3Client,
             objectName: name,
@@ -181,16 +183,16 @@ var process = function (req, res, done) {
             stream: part
         });
         upload.on('initiated', function () {
-            debug('mpu initiated');
+            log.debug('mpu initiated');
         });
         upload.on('uploading', function () {
-            debug('mpu uploading');
+            log.debug('mpu uploading');
         });
         upload.on('uploaded', function () {
-            debug('mpu uploaded');
+            log.debug('mpu uploaded');
         });
         upload.on('error', function (err) {
-            debug('mpu error');
+            log.debug('mpu error');
             failed.push({
                 name: name,
                 error: err
@@ -198,7 +200,7 @@ var process = function (req, res, done) {
             next(err);
         });
         upload.on('completed', function (body) {
-            debug('mpu complete');
+            log.debug('mpu complete');
             success.push({
                 name: name,
                 body: body
@@ -207,15 +209,15 @@ var process = function (req, res, done) {
         });
     });
     form.on('error', function (err) {
-        debug(err);
+        log.debug(err);
         done(err, data, success, failed, req, res);
     });
     form.on('aborted', function () {
-        debug('request was aborted');
+        log.debug('request was aborted');
         done(true, data, success, failed, req, res);
     });
     form.on('end', function () {
-        debug('form end');
+        log.debug('form end');
         next();
     });
     form.parse(req);
@@ -232,7 +234,7 @@ router.post('/vehicles', function (req, res) {
  */
 router.get('/vehicles/:id', function (req, res) {
     if (!mongutils.objectId(req.params.id)) {
-        res.send(404, {
+        res.status(404).send({
             error: 'specified vehicle cannot be found'
         });
         return;
@@ -241,13 +243,13 @@ router.get('/vehicles/:id', function (req, res) {
         _id: req.params.id
     }).exec(function (err, vehicle) {
         if (err) {
-            res.send(500, {
+            res.status(500).send({
                 error: err
             });
             return;
         }
         if (!vehicle) {
-            res.send(404, {
+            res.status(404).send({
                 error: 'specified vehicle cannot be found'
             });
             return;
@@ -264,7 +266,7 @@ router.get('/vehicles/:id', function (req, res) {
         }
         Vehicle.populate(vehicle, opts, function (err, vehicle) {
             if (err) {
-                res.send(400, {
+                res.status(400).send({
                     error: err
                 });
                 return;
@@ -280,7 +282,7 @@ router.get('/vehicles/:id', function (req, res) {
 router.put('/vehicles/:id', function (req, res) {
     var id = req.params.id;
     if (!mongutils.objectId(id)) {
-        res.send(404, {
+        res.status(404).send({
             error: 'specified vehicle cannot be found'
         });
         return;
@@ -289,13 +291,13 @@ router.put('/vehicles/:id', function (req, res) {
         _id: id
     }).exec(function (err, vehicle) {
         if (err) {
-            res.send(500, {
+            res.status(500).send({
                 error: err
             });
             return;
         }
         if (!vehicle) {
-            res.send(404, {
+            res.status(404).send({
                 error: 'specified vehicle cannot be found'
             });
             return;
@@ -318,7 +320,7 @@ router.get('/vehicles', function (req, res) {
         .sort(data.paging.sort)
         .exec(function (err, vehicles) {
             if (err) {
-                res.send(500, {
+                res.status(500).send({
                     error: err
                 });
                 return;
