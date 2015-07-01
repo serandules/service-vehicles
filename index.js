@@ -9,6 +9,7 @@ var uuid = require('node-uuid');
 var formida = require('formida');
 var agent = require('hub-agent');
 var async = require('async');
+var sharp = require('sharp');
 var MultiPartUpload = require('knox-mpu');
 
 var express = require('express');
@@ -29,10 +30,6 @@ var fields = {
 };
 
 var bucket = 'autos.serandives.com';
-
-var image = function (id) {
-    return 'images/' + id;
-};
 
 async.parallel({
     key: function (cb) {
@@ -70,27 +67,31 @@ async.parallel({
  });
  });
  });*/
-var clean = function (success, failed) {
+var cleanUploads = function (success, failed) {
 
 };
 
 var create = function (err, data, success, failed, req, res) {
     log.debug('add callback');
     if (err) {
-        clean(success, failed);
-        res.status(400).send({
-            error: err
+        cleanUploads(success, failed);
+        res.status(500).send({
+            error: 'error while adding new vehicle'
         });
         return;
     }
+    var photo;
     var photos = [];
-    success.forEach(function (suc) {
-        photos.push(suc.name);
-    });
+    for (photo in success) {
+        if (success.hasOwnProperty(photo) && !failed[photo]) {
+            photos.push(photo);
+        }
+    }
     data.photos = photos;
     Vehicle.create(data, function (err, vehicle) {
         if (err) {
-            res.status(400).send({
+            console.log(err);
+            res.status(500).send({
                 error: 'error while adding new vehicle'
             });
             return;
@@ -101,29 +102,89 @@ var create = function (err, data, success, failed, req, res) {
     });
 };
 
+var upload = function (name, stream, done) {
+    var upload = new MultiPartUpload({
+        client: s3Client,
+        objectName: name,
+        headers: {
+            'Content-Type': 'image/jpeg',
+            'x-amz-acl': 'public-read'
+        },
+        stream: stream
+    });
+    upload.on('initiated', function () {
+        log.debug('mpu initiated');
+    });
+    upload.on('uploading', function () {
+        log.debug('mpu uploading');
+    });
+    upload.on('uploaded', function () {
+        log.debug('mpu uploaded');
+    });
+    upload.on('error', function (err) {
+        log.debug('mpu error');
+        done(err);
+    });
+    upload.on('completed', function (body) {
+        log.debug('mpu complete');
+        done(false, name);
+    });
+};
+
+var save800x450 = function (id, part, done) {
+    var name = 'images/800x450/' + id;
+    var transformer = sharp()
+        .resize(800, 450)
+        .crop(sharp.gravity.center)
+        .jpeg()
+        .on('error', function (err) {
+            log.debug(err);
+            console.log(err);
+            done(err);
+        });
+    upload(name, part.pipe(transformer), done);
+};
+
+var save288x162 = function (id, part, done) {
+    var name = 'images/288x162/' + id;
+    var transformer = sharp()
+        .resize(288, 162)
+        .crop(sharp.gravity.center)
+        .jpeg()
+        .on('error', function (err) {
+            log.debug(err);
+            console.log(err);
+            done(err);
+        });
+    upload(name, part.pipe(transformer), done);
+};
+
 var update = function (old) {
     return function (err, data, success, failed, req, res) {
         log.debug('update callback');
         if (err) {
-            clean(success, failed);
-            res.status(400).send({
-                error: err
+            res.status(500).send({
+                error: 'error while updating vehicle'
             });
             return;
         }
+        var photo;
         var photos = [];
-        var id = req.params.id;
-        success.forEach(function (suc) {
-            photos.push(suc.name);
-        });
+        for (photo in success) {
+            if (success.hasOwnProperty(photo) && !failed[photo]) {
+                photos.push(photo);
+            }
+        }
         photos = data.photos.concat(photos);
         data.photos = photos;
+
+        var id = req.params.id;
         Vehicle.update({
             _id: id
         }, data, function (err, vehicle) {
             if (err) {
                 res.status(500).send({
-                    error: err
+                    error: 'error while updating vehicle'
                 });
                 return;
             }
@@ -155,7 +216,7 @@ var process = function (req, res, done) {
         if (--queue > 0) {
             return;
         }
-        done(null, data, success, failed, req, res);
+        done(false, data, success, failed, req, res);
     };
     var form = new formida.IncomingForm();
     form.on('progress', function (rec, exp) {
@@ -172,40 +233,19 @@ var process = function (req, res, done) {
     form.on('file', function (part) {
         log.debug('file field');
         queue++;
-        var name = image(uuid.v4());
-        var upload = new MultiPartUpload({
-            client: s3Client,
-            objectName: name,
-            headers: {
-                'Content-Type': part.headers['content-type'],
-                'x-amz-acl': 'public-read'
-            },
-            stream: part
-        });
-        upload.on('initiated', function () {
-            log.debug('mpu initiated');
-        });
-        upload.on('uploading', function () {
-            log.debug('mpu uploading');
-        });
-        upload.on('uploaded', function () {
-            log.debug('mpu uploaded');
-        });
-        upload.on('error', function (err) {
-            log.debug('mpu error');
-            failed.push({
-                name: name,
-                error: err
-            });
+        var id = uuid.v4();
+        save800x450(id, part, function (err, name) {
+            var photos = err ? failed : success;
+            photos = photos[id] || (photos[id] = []);
+            photos.push(name);
             next(err);
         });
-        upload.on('completed', function (body) {
-            log.debug('mpu complete');
-            success.push({
-                name: name,
-                body: body
-            });
-            next();
+        queue++;
+        save288x162(id, part, function (err, name) {
+            var photos = err ? failed : success;
+            photos = photos[id] || (photos[id] = []);
+            photos.push(name);
+            next(err);
         });
     });
     form.on('error', function (err) {
