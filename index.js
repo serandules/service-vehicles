@@ -368,3 +368,28 @@ router.get('/vehicles', function (req, res) {
             res.send(vehicles);
         });
 });
+
+/**
+ * /vehicles/51bfd3bd5a51f1722d000001
+ */
+router.delete('/vehicles/:id', function (req, res) {
+    if (!mongutils.objectId(req.params.id)) {
+        res.status(404).send({
+            error: 'specified vehicle cannot be found'
+        });
+        return;
+    }
+    Vehicle.remove({
+        _id: req.params.id
+    }, function (err) {
+        if (err) {
+            res.status(500).send({
+                error: err
+            });
+            return;
+        }
+        res.status(200).send({
+            error: false
+        });
+    });
+});
