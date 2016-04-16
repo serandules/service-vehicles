@@ -31,22 +31,12 @@ var fields = {
 
 var bucket = 'autos.serandives.com';
 
-async.parallel({
-    key: function (cb) {
-        agent.config('aws-key', function (data) {
-            cb(false, data);
-        });
-    },
-    secret: function (cb) {
-        agent.config('aws-secret', function (data) {
-            cb(false, data);
-        });
-    }
-}, function (err, results) {
+agent.config('amazon', function (amazon) {
+    var s3 = amazon.s3;
     s3Client = knox.createClient({
         secure: false,
-        key: results.key,
-        secret: results.secret,
+        key: s3.key,
+        secret: s3.secret,
         bucket: bucket
     });
 });
