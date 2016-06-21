@@ -32,11 +32,11 @@ var fields = {
 var bucket = 'autos.serandives.com';
 
 agent.config('amazon', function (amazon) {
-    var s3 = amazon.s3;
+    var aws = amazon.aws;
     s3Client = knox.createClient({
         secure: false,
-        key: s3.key,
-        secret: s3.secret,
+        key: aws.key,
+        secret: aws.secret,
         bucket: bucket
     });
 });
