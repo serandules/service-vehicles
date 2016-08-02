@@ -1,4 +1,5 @@
 var log = require('logger')('vehicle-service:index');
+var nconf = require('nconf');
 var utils = require('utils');
 var Vehicle = require('vehicle');
 var mongutils = require('mongutils');
@@ -7,7 +8,6 @@ var knox = require('knox');
 var path = require('path');
 var uuid = require('node-uuid');
 var formida = require('formida');
-var agent = require('hub-agent');
 var async = require('async');
 var sharp = require('sharp');
 var MultiPartUpload = require('knox-mpu');
@@ -16,8 +16,6 @@ var express = require('express');
 var router = express.Router();
 
 module.exports = router;
-
-var s3Client;
 
 var paging = {
     start: 0,
@@ -31,14 +29,11 @@ var fields = {
 
 var bucket = 'autos.serandives.com';
 
-agent.config('amazon', function (amazon) {
-    var aws = amazon.aws;
-    s3Client = knox.createClient({
-        secure: false,
-        key: aws.key,
-        secret: aws.secret,
-        bucket: bucket
-    });
+var s3Client = knox.createClient({
+    secure: false,
+    key: nconf.get('AWS_KEY'),
+    secret: nconf.get('AWS_SECRET'),
+    bucket: bucket
 });
 
 /**
