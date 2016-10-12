@@ -36,22 +36,6 @@ var s3Client = knox.createClient({
     bucket: bucket
 });
 
-/**
- * { "email": "ruchira@serandives.com", "password": "mypassword" }
- */
-/*app.post('/vehicles', function (req, res) {
- Vehicle.create(req.body, function (err, vehicle) {
- if (err) {
- res.send(400, {
- error: 'error while adding new vehicle'
- });
- return;
- }
- res.send({
- error: false
- });
- });
- });*/
 var cleanUploads = function (success, failed) {
 
 };
@@ -59,10 +43,12 @@ var cleanUploads = function (success, failed) {
 var create = function (err, data, success, failed, req, res) {
     log.debug('add callback');
     if (err) {
+        log.error(err);
         cleanUploads(success, failed);
-        res.status(500).send({
-            error: 'error while adding new vehicle'
-        });
+        res.status(500).send([{
+            code: 500,
+            message: 'Internal Server Error'
+        }]);
         return;
     }
     var photo;
@@ -75,15 +61,14 @@ var create = function (err, data, success, failed, req, res) {
     data.photos = photos;
     Vehicle.create(data, function (err, vehicle) {
         if (err) {
-            console.log(err);
-            res.status(500).send({
-                error: 'error while adding new vehicle'
-            });
+            log.error(err);
+            res.status(500).send([{
+                code: 500,
+                message: 'Internal Server Error'
+            }]);
             return;
         }
-        res.send({
-            error: false
-        });
+        res.status(204).end();
     });
 };
 
@@ -148,9 +133,11 @@ var update = function (old) {
     return function (err, data, success, failed, req, res) {
         log.debug('update callback');
         if (err) {
-            res.status(500).send({
-                error: 'error while updating vehicle'
-            });
+            log.error(err);
+            res.status(500).send([{
+                code: 500,
+                message: 'Internal Server Error'
+            }]);
             return;
         }
         var photo;
@@ -168,15 +155,15 @@ var update = function (old) {
             _id: id
         }, data, function (err, vehicle) {
             if (err) {
-                res.status(500).send({
-                    error: 'error while updating vehicle'
-                });
+                log.error(err);
+                res.status(500).send([{
+                    code: 500,
+                    message: 'Internal Server Error'
+                }]);
                 return;
             }
             //TODO: handle 404 case
-            res.send({
-                error: false
-            });
+            res.status(204).end();
         });
         old.photos.forEach(function (photo) {
             var index = photos.indexOf(photo);
@@ -259,24 +246,28 @@ router.post('/vehicles', function (req, res) {
  */
 router.get('/vehicles/:id', function (req, res) {
     if (!mongutils.objectId(req.params.id)) {
-        res.status(404).send({
-            error: 'specified vehicle cannot be found'
-        });
+        res.status(404).send([{
+            code: 404,
+            message: 'Vehicle Not Found'
+        }]);
         return;
     }
     Vehicle.findOne({
         _id: req.params.id
     }).exec(function (err, vehicle) {
         if (err) {
-            res.status(500).send({
-                error: err
-            });
+            log.error(err);
+            res.status(500).send([{
+                code: 500,
+                message: 'Internal Server Error'
+            }]);
             return;
         }
         if (!vehicle) {
-            res.status(404).send({
-                error: 'specified vehicle cannot be found'
-            });
+            res.status(404).send([{
+                code: 404,
+                message: 'Vehicle Not Found'
+            }]);
             return;
         }
         var name;
@@ -291,9 +282,10 @@ router.get('/vehicles/:id', function (req, res) {
         }
         Vehicle.populate(vehicle, opts, function (err, vehicle) {
             if (err) {
-                res.status(400).send({
-                    error: err
-                });
+                res.status(400).send([{
+                    code: 400,
+                    message: err
+                }]);
                 return;
             }
             res.send(vehicle);
@@ -307,24 +299,28 @@ router.get('/vehicles/:id', function (req, res) {
 router.put('/vehicles/:id', function (req, res) {
     var id = req.params.id;
     if (!mongutils.objectId(id)) {
-        res.status(404).send({
-            error: 'specified vehicle cannot be found'
-        });
+        res.status(404).send([{
+            code: 404,
+            message: 'Vehicle Not Found'
+        }]);
         return;
     }
     Vehicle.findOne({
         _id: id
     }).exec(function (err, vehicle) {
         if (err) {
-            res.status(500).send({
-                error: err
-            });
+            log.error(err);
+            res.status(500).send([{
+                code: 500,
+                message: 'Internal Server Error'
+            }]);
             return;
         }
         if (!vehicle) {
-            res.status(404).send({
-                error: 'specified vehicle cannot be found'
-            });
+            res.status(404).send([{
+                code: 404,
+                message: 'Vehicle Not Found'
+            }]);
             return;
         }
         process(req, res, update(vehicle));
@@ -345,9 +341,11 @@ router.get('/vehicles', function (req, res) {
         .sort(data.paging.sort)
         .exec(function (err, vehicles) {
             if (err) {
-                res.status(500).send({
-                    error: err
-                });
+                log.error(err);
+                res.status(500).send([{
+                    code: 500,
+                    message: 'Internal Server Error'
+                }]);
                 return;
             }
             res.send(vehicles);
@@ -359,22 +357,23 @@ router.get('/vehicles', function (req, res) {
  */
 router.delete('/vehicles/:id', function (req, res) {
     if (!mongutils.objectId(req.params.id)) {
-        res.status(404).send({
-            error: 'specified vehicle cannot be found'
-        });
+        res.status(404).send([{
+            code: 404,
+            message: 'Vehicle Not Found'
+        }]);
         return;
     }
     Vehicle.remove({
         _id: req.params.id
     }, function (err) {
         if (err) {
-            res.status(500).send({
-                error: err
-            });
+            log.error(err);
+            res.status(500).send([{
+                code: 500,
+                message: 'Internal Server Error'
+            }]);
             return;
         }
-        res.status(200).send({
-            error: false
-        });
+        res.status(204).end();
     });
 });
