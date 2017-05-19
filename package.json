@@ -1,27 +1,39 @@
 {
-    "name": "vehicle-service",
-    "description": "vehicle-service",
-    "version": "0.0.0",
-    "author": {
-        "name": "serandives",
-        "email": "serandives@gmail.com"
-    },
-    "dependencies": {
-        "async": "1.*",
-        "knox": "0.*",
-        "knox-mpu": "0.*",
-        "node-uuid": "1.*",
-        "express": "4.*",
-        "sharp": "0.16.0",
-        "logger": "serandules/logger#master",
-        "utils": "serandules/utils#master",
-        "vehicle": "serandules/vehicle#master",
-        "mongutils": "serandules/mongutils#master",
-        "formida": "serandules/formida#master",
-        "hub-agent": "serandules/hub-agent#master"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/serandules/vehicle-service.git"
-    }
+  "name": "service-vehicles",
+  "description": "service-vehicles",
+  "version": "0.0.0",
+  "author": {
+    "name": "serandives",
+    "email": "serandives@gmail.com"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "dependencies": {
+    "async": "1.*",
+    "knox": "0.*",
+    "knox-mpu": "0.*",
+    "node-uuid": "1.*",
+    "express": "4.*",
+    "sharp": "0.16.0",
+    "logger": "serandules/logger#master",
+    "utils": "serandules/utils#master",
+    "vehicle": "serandules/vehicle#master",
+    "mongutils": "serandules/mongutils#master",
+    "formida": "serandules/formida#master",
+    "hub-agent": "serandules/hub-agent#master",
+    "errors": "serandules/errors#master",
+    "auth": "serandules/auth#master",
+    "serandi": "serandules/serandi#master"
+  },
+  "devDependencies": {
+    "mocha": "3.2.0",
+    "should": "11.2.1",
+    "request": "2.81.0",
+    "pot": "serandules/pot#master"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/serandules/service-vehicles.git"
+  }
 }

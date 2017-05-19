@@ -1,9 +1,5 @@
-var log = require('logger')('vehicle-service:index');
+var log = require('logger')('service-vehicles:index');
 var nconf = require('nconf');
-var utils = require('utils');
-var Vehicle = require('vehicle');
-var mongutils = require('mongutils');
-var sanitizer = require('./sanitizer');
 var knox = require('knox');
 var path = require('path');
 var uuid = require('node-uuid');
@@ -11,9 +7,19 @@ var formida = require('formida');
 var async = require('async');
 var sharp = require('sharp');
 var MultiPartUpload = require('knox-mpu');
-
 var express = require('express');
-var router = express.Router();
+var bodyParser = require('body-parser');
+
+var errors = require('errors');
+var utils = require('utils');
+var mongutils = require('mongutils');
+var auth = require('auth');
+var serandi = require('serandi');
+
+var Vehicles = require('model-vehicles');
+
+var validators = require('./validators');
+var sanitizers = require('./sanitizers');
 
 module.exports = router;
 
@@ -45,11 +51,7 @@ var create = function (err, data, success, failed, req, res) {
     if (err) {
         log.error(err);
         cleanUploads(success, failed);
-        res.status(500).send([{
-            code: 500,
-            message: 'Internal Server Error'
-        }]);
-        return;
+        return res.pond(errors.serverError());
     }
     var photo;
     var photos = [];
@@ -59,16 +61,12 @@ var create = function (err, data, success, failed, req, res) {
         }
     }
     data.photos = photos;
-    Vehicle.create(data, function (err, vehicle) {
+    Vehicles.create(data, function (err, vehicle) {
         if (err) {
             log.error(err);
-            res.status(500).send([{
-                code: 500,
-                message: 'Internal Server Error'
-            }]);
-            return;
+            return res.pond(errors.serverError());
         }
-        res.status(204).end();
+        res.locate(vehicle.id).status(201).send(vehicle);
     });
 };
 
@@ -134,11 +132,7 @@ var update = function (old) {
         log.debug('update callback');
         if (err) {
             log.error(err);
-            res.status(500).send([{
-                code: 500,
-                message: 'Internal Server Error'
-            }]);
-            return;
+            return res.pond(errors.serverError());
         }
         var photo;
         var photos = [];
@@ -151,16 +145,12 @@ var update = function (old) {
         data.photos = photos;
 
         var id = req.params.id;
-        Vehicle.update({
+        Vehicles.update({
             _id: id
         }, data, function (err, vehicle) {
             if (err) {
                 log.error(err);
-                res.status(500).send([{
-                    code: 500,
-                    message: 'Internal Server Error'
-                }]);
-                return;
+                return res.pond(errors.serverError());
             }
             //TODO: handle 404 case
             res.status(204).end();
@@ -234,146 +224,105 @@ var process = function (req, res, done) {
     });
     form.parse(req);
 };
-/**
- * { "email": "ruchira@serandives.com", "password": "mypassword" }
- */
-router.post('/vehicles', function (req, res) {
-    process(req, res, create);
-});
 
-/**
- * /vehicles/51bfd3bd5a51f1722d000001
- */
-router.get('/vehicles/:id', function (req, res) {
-    if (!mongutils.objectId(req.params.id)) {
-        res.status(404).send([{
-            code: 404,
-            message: 'Vehicle Not Found'
-        }]);
-        return;
-    }
-    Vehicle.findOne({
-        _id: req.params.id
-    }).exec(function (err, vehicle) {
-        if (err) {
-            log.error(err);
-            res.status(500).send([{
-                code: 500,
-                message: 'Internal Server Error'
-            }]);
-            return;
+module.exports = function (router) {
+    router.use(serandi.pond);
+    router.use(serandi.ctx);
+    router.use(auth({
+        open: [
+            '^\/$'
+        ],
+        hybrid: [
+            '^\/([\/].*|$)'
+        ]
+    }));
+    router.use(bodyParser.json());
+
+    /**
+     * { "email": "ruchira@serandives.com", "password": "mypassword" }
+     */
+    router.post('/', function (req, res) {
+        process(req, res, create);
+    });
+
+    /**
+     * /vehicles/51bfd3bd5a51f1722d000001
+     */
+    router.get('/:id', function (req, res) {
+        if (!mongutils.objectId(req.params.id)) {
+            return res.pond(errors.notFound());
         }
-        if (!vehicle) {
-            res.status(404).send([{
-                code: 404,
-                message: 'Vehicle Not Found'
-            }]);
-            return;
-        }
-        var name;
-        var opts = [];
-        for (name in vehicle.addresses) {
-            if (vehicle.addresses.hasOwnProperty(name)) {
-                opts.push({
-                    model: 'Location',
-                    path: 'addresses.' + name + '.location'
-                });
-            }
-        }
-        Vehicle.populate(vehicle, opts, function (err, vehicle) {
+        Vehicles.findOne({
+            _id: req.params.id
+        }).populate('location').exec(function (err, vehicle) {
             if (err) {
-                res.status(400).send([{
-                    code: 400,
-                    message: err
-                }]);
-                return;
+                log.error(err);
+                return res.pond(errors.serverError());
+            }
+            if (!vehicle) {
+                return res.pond(errors.notFound());
             }
             res.send(vehicle);
         });
     });
-});
 
-/**
- * /vehicles/51bfd3bd5a51f1722d000001
- */
-router.put('/vehicles/:id', function (req, res) {
-    var id = req.params.id;
-    if (!mongutils.objectId(id)) {
-        res.status(404).send([{
-            code: 404,
-            message: 'Vehicle Not Found'
-        }]);
-        return;
-    }
-    Vehicle.findOne({
-        _id: id
-    }).exec(function (err, vehicle) {
-        if (err) {
-            log.error(err);
-            res.status(500).send([{
-                code: 500,
-                message: 'Internal Server Error'
-            }]);
-            return;
+    /**
+     * /vehicles/51bfd3bd5a51f1722d000001
+     */
+    router.put('/:id', function (req, res) {
+        if (!mongutils.objectId(req.params.id)) {
+            return res.pond(errors.notFound());
         }
-        if (!vehicle) {
-            res.status(404).send([{
-                code: 404,
-                message: 'Vehicle Not Found'
-            }]);
-            return;
-        }
-        process(req, res, update(vehicle));
-    });
-});
-
-/**
- * /vehicles?data={}
- */
-router.get('/vehicles', function (req, res) {
-    var data = req.query.data ? JSON.parse(req.query.data) : {};
-    sanitizer.clean(data.query || (data.query = {}));
-    utils.merge(data.paging || (data.paging = {}), paging);
-    utils.merge(data.fields || (data.fields = {}), fields);
-    Vehicle.find(data.query)
-        .skip(data.paging.start)
-        .limit(data.paging.count)
-        .sort(data.paging.sort)
-        .exec(function (err, vehicles) {
+        Vehicles.findOne({
+            _id: id
+        }).exec(function (err, vehicle) {
             if (err) {
                 log.error(err);
-                res.status(500).send([{
-                    code: 500,
-                    message: 'Internal Server Error'
-                }]);
-                return;
+                return res.pond(errors.serverError());
             }
-            res.send(vehicles);
+            if (!vehicle) {
+                return res.pond(errors.notFound());
+            }
+            process(req, res, update(vehicle));
         });
-});
-
-/**
- * /vehicles/51bfd3bd5a51f1722d000001
- */
-router.delete('/vehicles/:id', function (req, res) {
-    if (!mongutils.objectId(req.params.id)) {
-        res.status(404).send([{
-            code: 404,
-            message: 'Vehicle Not Found'
-        }]);
-        return;
-    }
-    Vehicle.remove({
-        _id: req.params.id
-    }, function (err) {
-        if (err) {
-            log.error(err);
-            res.status(500).send([{
-                code: 500,
-                message: 'Internal Server Error'
-            }]);
-            return;
-        }
-        res.status(204).end();
     });
-});
+
+    /**
+     * /vehicles?data={}
+     */
+    router.get('/', function (req, res) {
+        var data = req.query.data ? JSON.parse(req.query.data) : {};
+        sanitizers.clean(data.query || (data.query = {}));
+        utils.merge(data.paging || (data.paging = {}), paging);
+        utils.merge(data.fields || (data.fields = {}), fields);
+        Vehicles.find(data.query)
+            .skip(data.paging.start)
+            .limit(data.paging.count)
+            .sort(data.paging.sort)
+            .exec(function (err, vehicles) {
+                if (err) {
+                    log.error(err);
+                    return res.pond(errors.serverError());
+                }
+                res.send(vehicles);
+            });
+    });
+
+    /**
+     * /vehicles/51bfd3bd5a51f1722d000001
+     */
+    router.delete('/:id', function (req, res) {
+        if (!mongutils.objectId(req.params.id)) {
+            return res.pond(errors.notFound());
+        }
+        Vehicles.remove({
+            _id: req.params.id
+        }, function (err) {
+            if (err) {
+                log.error(err);
+                return res.pond(errors.serverError());
+            }
+            res.status(204).end();
+        });
+    });
+};
