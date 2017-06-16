@@ -1,5 +1,3 @@
-var log = require('logger')('vehicle-service:sanitizer');
-
-module.exports.clean = function(o) {
-    return o;
+exports.create = function(req, res, next) {
+    return next();
 };

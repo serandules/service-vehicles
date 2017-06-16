@@ -1,10 +1,11 @@
-var log = require('logger')('service-clients:test:create');
+var log = require('logger')('service-vehicles:test:create');
+var fs = require('fs');
 var errors = require('errors');
 var should = require('should');
 var request = require('request');
 var pot = require('pot');
 
-describe('POST /clients', function () {
+describe('POST /vehicles', function () {
     var client;
     before(function (done) {
         pot.start(function (err) {
@@ -25,9 +26,56 @@ describe('POST /clients', function () {
         pot.stop(done);
     });
 
+    var payload = function (without) {
+        var vehicle = {
+            location: '59417b1220873e577df88aa2',
+            contacts: JSON.stringify({
+                email: 'user@serandives.com'
+            }),
+            type: 'suv',
+            make: '59417b1220873e577df88aa2',
+            model: '59417b1220873e577df88aa2',
+            manufacturedAt: String(Date.now()),
+            country: '59417b1220873e577df88aa2',
+            fuel: 'petrol',
+            transmission: 'automatic',
+            doors: 5,
+            steering: 'right',
+            seats: 5,
+            driveType: 'front',
+            mileage: 20000,
+            condition: 'used',
+            engine: 1500,
+            color: 'wine-red',
+            description: '',
+            //photos: ["http://localhost"],
+            price: 6000000,
+            currency: 'LKR',
+            centralLock: true,
+            sunroof: false,
+            spareWheels: false,
+            toolkit: true,
+            tinted: true,
+            airConditioned: true,
+            navigator: true,
+            entertainment: true,
+            security: true,
+            racks: false,
+            powerShutters: true,
+            powerMirrors: true,
+            seatBelts: true,
+            canopy: false
+        };
+        without = without || [];
+        without.forEach(function (w) {
+            delete vehicle[w];
+        });
+        return vehicle;
+    };
+
     it('with no media type', function (done) {
         request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'POST',
             auth: {
                 bearer: client.token
@@ -48,7 +96,7 @@ describe('POST /clients', function () {
 
     it('with unsupported media type', function (done) {
         request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'POST',
             headers: {
                 'Content-Type': 'application/xml'
@@ -70,86 +118,71 @@ describe('POST /clients', function () {
         });
     });
 
-    it('without name', function (done) {
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
-            method: 'POST',
-            json: {},
-            auth: {
-                bearer: client.token
-            }
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(errors.unprocessableEntity().status);
-            should.exist(b);
-            should.exist(b.code);
-            should.exist(b.message);
-            b.code.should.equal(errors.unprocessableEntity().data.code);
-            done();
+    var fields = [
+        'location',
+        'contacts',
+        'type',
+        'make',
+        'model',
+        'manufacturedAt',
+        'country',
+        'fuel',
+        'transmission',
+        'doors',
+        'steering',
+        'seats',
+        'driveType',
+        'mileage',
+        'condition',
+        'engine',
+        'color',
+        'price',
+        'currency'
+    ];
+
+    fields.forEach(function (field) {
+        it('without ' + field, function (done) {
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'POST',
+                json: payload([field]),
+                auth: {
+                    bearer: client.token
+                }
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                console.log(b)
+                r.statusCode.should.equal(errors.unprocessableEntity().status);
+                should.exist(b);
+                should.exist(b.code);
+                should.exist(b.message);
+                b.code.should.equal(errors.unprocessableEntity().data.code);
+                done();
+            });
         });
     });
 
-    it('with invalid to', function (done) {
+    it.only('with valid fields', function (done) {
         request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'POST',
-            json: {
-                name: 'serandives',
-                to: 'dummy'
+            formData: {
+                data: JSON.stringify(payload()),
+                photos: [
+                    fs.createReadStream(__dirname + '/images/car.jpg'),
+                    fs.createReadStream(__dirname + '/images/car.jpg')
+                ],
+                something: [
+                    fs.createReadStream(__dirname + '/images/car.jpg'),
+                    fs.createReadStream(__dirname + '/images/car.jpg')
+                ]
             },
             auth: {
                 bearer: client.token
-            }
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(errors.unprocessableEntity().status);
-            should.exist(b);
-            should.exist(b.code);
-            should.exist(b.message);
-            b.code.should.equal(errors.unprocessableEntity().data.code);
-            done();
-        });
-    });
-
-    it('with name', function (done) {
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
-            method: 'POST',
-            json: {
-                name: 'serandives'
             },
-            auth: {
-                bearer: client.token
-            }
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(201);
-            should.exist(b);
-            should.exist(b.name);
-            b.name.should.equal('serandives');
-            should.exist(r.headers['location']);
-            r.headers['location'].should.equal(pot.resolve('accounts', '/apis/v/clients/' + b.id));
-            done();
-        });
-    });
-
-    it('with name and to', function (done) {
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
-            method: 'POST',
-            json: {
-                name: 'serandives',
-                to: ['http://test.serandives.com/dummy']
-            },
-            auth: {
-                bearer: client.token
-            }
+            json: true
         }, function (e, r, b) {
             if (e) {
                 return done(e);
@@ -157,95 +190,20 @@ describe('POST /clients', function () {
             r.statusCode.should.equal(201);
             should.exist(b);
             should.exist(b.id);
-            should.exist(b.name);
-            should.exist(b.to);
-            b.name.should.equal('serandives');
-            b.to.length.should.equal(1);
-            b.to[0].should.equal('http://test.serandives.com/dummy');
+            should.exist(b.type);
+            b.type.should.equal('suv');
+            should.exist(b.photos);
+            should.exist(b.photos.length);
+            b.photos.length.should.equal(4);
+            b.photos.forEach(function (path) {
+                should.exist(path);
+                path.should.String();
+                path.should.startWith('images/');
+            });
             should.exist(r.headers['location']);
-            r.headers['location'].should.equal(pot.resolve('accounts', '/apis/v/clients/' + b.id));
+            r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));
             done();
         });
     });
 
-    it('with name and malformed to (protocol)', function (done) {
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
-            method: 'POST',
-            json: {
-                to: 'test.serandives.com/dummy'
-            },
-            auth: {
-                bearer: client.token
-            }
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(errors.unprocessableEntity().status);
-            should.exist(b);
-            should.exist(b.code);
-            should.exist(b.message);
-            b.code.should.equal(errors.unprocessableEntity().data.code);
-            done();
-        });
-    });
-
-    it('with name and malformed to (url length)', function (done) {
-        var url = 'https://test.serandives.com/dummy';
-        for (var i = 0; i < 2000; i++) {
-            url += 'abcdef';
-        }
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
-            method: 'POST',
-            json: {
-                name: 'serandives',
-                to: [url]
-            },
-            auth: {
-                bearer: client.token
-            }
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(errors.unprocessableEntity().status);
-            should.exist(b);
-            should.exist(b.code);
-            should.exist(b.message);
-            b.code.should.equal(errors.unprocessableEntity().data.code);
-            done();
-        });
-    });
-
-
-    it('with name and malformed to (size)', function (done) {
-        var url = 'https://test.serandives.com/dummy';
-        var to = [];
-        for (var i = 0; i < 6; i++) {
-            to.push(url);
-        }
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients'),
-            method: 'POST',
-            json: {
-                name: 'serandives',
-                to: to
-            },
-            auth: {
-                bearer: client.token
-            }
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(errors.unprocessableEntity().status);
-            should.exist(b);
-            should.exist(b.code);
-            should.exist(b.message);
-            b.code.should.equal(errors.unprocessableEntity().data.code);
-            done();
-        });
-    });
 });

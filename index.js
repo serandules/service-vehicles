@@ -2,8 +2,8 @@ var log = require('logger')('service-vehicles:index');
 var nconf = require('nconf');
 var knox = require('knox');
 var path = require('path');
+var fs = require('fs');
 var uuid = require('node-uuid');
-var formida = require('formida');
 var async = require('async');
 var sharp = require('sharp');
 var MultiPartUpload = require('knox-mpu');
@@ -20,8 +20,6 @@ var Vehicles = require('model-vehicles');
 
 var validators = require('./validators');
 var sanitizers = require('./sanitizers');
-
-module.exports = router;
 
 var paging = {
     start: 0,
@@ -42,32 +40,8 @@ var s3Client = knox.createClient({
     bucket: bucket
 });
 
-var cleanUploads = function (success, failed) {
-
-};
-
-var create = function (err, data, success, failed, req, res) {
-    log.debug('add callback');
-    if (err) {
-        log.error(err);
-        cleanUploads(success, failed);
-        return res.pond(errors.serverError());
-    }
-    var photo;
-    var photos = [];
-    for (photo in success) {
-        if (success.hasOwnProperty(photo) && !failed[photo]) {
-            photos.push(photo);
-        }
-    }
-    data.photos = photos;
-    Vehicles.create(data, function (err, vehicle) {
-        if (err) {
-            log.error(err);
-            return res.pond(errors.serverError());
-        }
-        res.locate(vehicle.id).status(201).send(vehicle);
-    });
+var cleanUploads = function (photos, done) {
+    done();
 };
 
 var upload = function (name, stream, done) {
@@ -99,48 +73,36 @@ var upload = function (name, stream, done) {
     });
 };
 
-var save800x450 = function (id, part, done) {
+var save800x450 = function (id, stream, done) {
     var name = 'images/800x450/' + id;
     var transformer = sharp()
         .resize(800, 450)
         .crop(sharp.gravity.center)
         .jpeg()
         .on('error', function (err) {
-            log.debug(err);
-            console.log(err);
+            log.error(err);
             done(err);
         });
-    upload(name, part.pipe(transformer), done);
+    upload(name, fs.createReadStream(stream.path).pipe(transformer), done);
 };
 
-var save288x162 = function (id, part, done) {
+var save288x162 = function (id, stream, done) {
     var name = 'images/288x162/' + id;
     var transformer = sharp()
         .resize(288, 162)
         .crop(sharp.gravity.center)
         .jpeg()
         .on('error', function (err) {
-            log.debug(err);
-            console.log(err);
+            log.error(err);
             done(err);
         });
-    upload(name, part.pipe(transformer), done);
+    upload(name, fs.createReadStream(stream.path).pipe(transformer), done);
 };
 
 var update = function (old) {
-    return function (err, data, success, failed, req, res) {
+    return function (req, res, photos) {
         log.debug('update callback');
-        if (err) {
-            log.error(err);
-            return res.pond(errors.serverError());
-        }
-        var photo;
-        var photos = [];
-        for (photo in success) {
-            if (success.hasOwnProperty(photo) && !failed[photo]) {
-                photos.push(photo);
-            }
-        }
+        var data = req.body;
         photos = data.photos.concat(photos);
         data.photos = photos;
 
@@ -152,7 +114,6 @@ var update = function (old) {
                 log.error(err);
                 return res.pond(errors.serverError());
             }
-            //TODO: handle 404 case
             res.status(204).end();
         });
         old.photos.forEach(function (photo) {
@@ -162,86 +123,82 @@ var update = function (old) {
             }
             //deleting obsolete photos
             s3Client.deleteFile(photo, function (err, res) {
+                if (err) {
+                    log.error(err);
+                }
                 log.debug('file:%s is deleted', photo);
             });
         });
     };
 };
 
-var process = function (req, res, done) {
-    var data;
-    var success = [];
-    var failed = [];
-    //queue is started from 1 as next() is called always at form end
-    var queue = 1;
-    var next = function (err) {
-        if (--queue > 0) {
-            return;
+var create = function (req, res, photos) {
+    var token = req.token;
+    var user = token.user;
+    var data = req.body;
+    data.user = user.id;
+    data.photos = photos;
+    Vehicles.create(data, function (err, vehicle) {
+        if (err) {
+            log.error(err);
+            return res.pond(errors.serverError());
         }
-        done(false, data, success, failed, req, res);
-    };
-    var form = new formida.IncomingForm();
-    form.on('progress', function (rec, exp) {
-        log.debug('received >>> %s', rec);
-        log.debug('expected >>> %s', exp);
+        res.locate(vehicle.id).status(201).send(vehicle);
     });
-    form.on('field', function (name, value) {
-        if (name !== 'data') {
-            return;
-        }
-        log.debug('%s %s', name, value);
-        data = JSON.parse(value);
-    });
-    form.on('file', function (part) {
-        log.debug('file field');
-        queue++;
+};
+
+var process = function (req, res, next) {
+    var photos = [];
+    var streams = req.streams['photos'] || [];
+    async.each(streams, function (stream, processed) {
         var id = uuid.v4();
-        save800x450(id, part, function (err, name) {
-            var photos = err ? failed : success;
-            photos = photos[id] || (photos[id] = []);
+        save288x162(id, stream, function (err, name) {
+            if (err) {
+                return processed(err);
+            }
             photos.push(name);
-            next(err);
+            save800x450(id, stream, function (err, name) {
+                if (err) {
+                    return processed(err);
+                }
+                photos.push(name);
+                processed();
+            });
         });
-        queue++;
-        save288x162(id, part, function (err, name) {
-            var photos = err ? failed : success;
-            photos = photos[id] || (photos[id] = []);
-            photos.push(name);
-            next(err);
-        });
+    }, function (err) {
+        if (err) {
+            log.error(err);
+            cleanUploads(photos, function (err) {
+                if (err) {
+                    log.error(err);
+                }
+                res.pond(errors.serverError());
+            });
+            return;
+        }
+        next(req, res, photos);
     });
-    form.on('error', function (err) {
-        log.debug(err);
-        done(err, data, success, failed, req, res);
-    });
-    form.on('aborted', function () {
-        log.debug('request was aborted');
-        done(true, data, success, failed, req, res);
-    });
-    form.on('end', function () {
-        log.debug('form end');
-        next();
-    });
-    form.parse(req);
 };
 
 module.exports = function (router) {
     router.use(serandi.pond);
     router.use(serandi.ctx);
     router.use(auth({
-        open: [
-            '^\/$'
-        ],
-        hybrid: [
-            '^\/([\/].*|$)'
-        ]
+        GET: {
+            open: [
+                '^\/$'
+            ],
+            hybrid: [
+                '^\/([\/].*|$)'
+            ]
+        }
     }));
     router.use(bodyParser.json());
 
     /**
      * { "email": "ruchira@serandives.com", "password": "mypassword" }
      */
-    router.post('/', function (req, res) {
+    router.post('/', validators.create, sanitizers.create, function (req, res) {
         process(req, res, create);
     });
 
