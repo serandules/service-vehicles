@@ -5,7 +5,7 @@ var pot = require('pot');
 var mongoose = require('mongoose');
 var errors = require('errors');
 
-describe('GET /clients', function () {
+describe.skip('GET /clients', function () {
     var serandivesId;
     var user;
     var accessToken;

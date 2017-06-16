@@ -1,9 +1,12 @@
 var log = require('logger')('service-vehicles:test:create');
 var fs = require('fs');
+var _ = require('lodash');
 var errors = require('errors');
 var should = require('should');
 var request = require('request');
 var pot = require('pot');
+
+var vehicle = require('./vehicle.json');
 
 describe('POST /vehicles', function () {
     var client;
@@ -27,50 +30,12 @@ describe('POST /vehicles', function () {
     });
 
     var payload = function (without) {
-        var vehicle = {
-            location: '59417b1220873e577df88aa2',
-            contacts: JSON.stringify({
-                email: 'user@serandives.com'
-            }),
-            type: 'suv',
-            make: '59417b1220873e577df88aa2',
-            model: '59417b1220873e577df88aa2',
-            manufacturedAt: String(Date.now()),
-            country: '59417b1220873e577df88aa2',
-            fuel: 'petrol',
-            transmission: 'automatic',
-            doors: 5,
-            steering: 'right',
-            seats: 5,
-            driveType: 'front',
-            mileage: 20000,
-            condition: 'used',
-            engine: 1500,
-            color: 'wine-red',
-            description: '',
-            //photos: ["http://localhost"],
-            price: 6000000,
-            currency: 'LKR',
-            centralLock: true,
-            sunroof: false,
-            spareWheels: false,
-            toolkit: true,
-            tinted: true,
-            airConditioned: true,
-            navigator: true,
-            entertainment: true,
-            security: true,
-            racks: false,
-            powerShutters: true,
-            powerMirrors: true,
-            seatBelts: true,
-            canopy: false
-        };
+        var clone = _.cloneDeep(vehicle);
         without = without || [];
         without.forEach(function (w) {
-            delete vehicle[w];
+            delete clone[w];
         });
-        return vehicle;
+        return clone;
     };
 
     it('with no media type', function (done) {
@@ -145,7 +110,10 @@ describe('POST /vehicles', function () {
             request({
                 uri: pot.resolve('autos', '/apis/v/vehicles'),
                 method: 'POST',
-                json: payload([field]),
+                formData: {
+                    data: JSON.stringify(payload([field]))
+                },
+                json: true,
                 auth: {
                     bearer: client.token
                 }
@@ -153,7 +121,6 @@ describe('POST /vehicles', function () {
                 if (e) {
                     return done(e);
                 }
-                console.log(b)
                 r.statusCode.should.equal(errors.unprocessableEntity().status);
                 should.exist(b);
                 should.exist(b.code);
@@ -164,7 +131,7 @@ describe('POST /vehicles', function () {
         });
     });
 
-    it.only('with valid fields', function (done) {
+    it('with valid fields', function (done) {
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'POST',
