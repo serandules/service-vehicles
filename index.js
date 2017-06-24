@@ -23,7 +23,7 @@ var sanitizers = require('./sanitizers');
 
 var paging = {
     start: 0,
-    count: 40,
+    count: 20,
     sort: ''
 };
 
@@ -247,9 +247,8 @@ module.exports = function (router) {
     /**
      * /vehicles?data={}
      */
-    router.get('/', function (req, res) {
-        var data = req.query.data ? JSON.parse(req.query.data) : {};
-        sanitizers.clean(data.query || (data.query = {}));
+    router.get('/', validators.find, sanitizers.find, function (req, res) {
+        var data = req.query.data || {};
         utils.merge(data.paging || (data.paging = {}), paging);
         utils.merge(data.fields || (data.fields = {}), fields);
         Vehicles.find(data.query)

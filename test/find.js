@@ -1,97 +1,27 @@
-var log = require('logger')('service-clients:test:find');
+var log = require('logger')('service-vehicles:test:find');
+var fs = require('fs');
+var _ = require('lodash');
+var async = require('async');
+var errors = require('errors');
 var should = require('should');
 var request = require('request');
 var pot = require('pot');
-var mongoose = require('mongoose');
-var errors = require('errors');
 
-describe.skip('GET /clients', function () {
-    var serandivesId;
-    var user;
-    var accessToken;
-    var clientId;
+var vehicle = require('./vehicle.json');
+
+describe('GET /vehicles', function () {
+    var client;
     before(function (done) {
         pot.start(function (err) {
             if (err) {
                 return done(err);
             }
-            request({
-                uri: pot.resolve('accounts', '/apis/v/configs/boot'),
-                method: 'GET',
-                json: true
-            }, function (e, r, b) {
-                if (e) {
-                    return done(e);
+            pot.client(function (err, c) {
+                if (err) {
+                    return done(err);
                 }
-                r.statusCode.should.equal(200);
-                should.exist(b);
-                should.exist(b.name);
-                b.name.should.equal('boot');
-                should.exist(b.value);
-                should.exist(b.value.clients);
-                should.exist(b.value.clients.serandives);
-                serandivesId = b.value.clients.serandives;
-                request({
-                    uri: pot.resolve('accounts', '/apis/v/users'),
-                    method: 'POST',
-                    json: {
-                        email: 'user@serandives.com',
-                        password: '1@2.Com'
-                    }
-                }, function (e, r, b) {
-                    if (e) {
-                        return done(e);
-                    }
-                    r.statusCode.should.equal(201);
-                    should.exist(b);
-                    should.exist(b.id);
-                    should.exist(b.email);
-                    b.email.should.equal('user@serandives.com');
-                    user = b;
-                    request({
-                        uri: pot.resolve('accounts', '/apis/v/tokens'),
-                        method: 'POST',
-                        json: {
-                            client_id: serandivesId,
-                            grant_type: 'password',
-                            username: 'user@serandives.com',
-                            password: '1@2.Com'
-                        }
-                    }, function (e, r, b) {
-                        if (e) {
-                            return done(e);
-                        }
-                        r.statusCode.should.equal(200);
-                        should.exist(b.access_token);
-                        should.exist(b.refresh_token);
-                        accessToken = b.access_token;
-                        request({
-                            uri: pot.resolve('accounts', '/apis/v/clients'),
-                            method: 'POST',
-                            json: {
-                                name: 'serandives',
-                                to: ['http://test.serandives.com/dummy']
-                            },
-                            auth: {
-                                bearer: accessToken
-                            }
-                        }, function (e, r, b) {
-                            if (e) {
-                                return done(e);
-                            }
-                            r.statusCode.should.equal(201);
-                            should.exist(b);
-                            should.exist(b.id);
-                            should.exist(b.name);
-                            should.exist(b.to);
-                            b.name.should.equal('serandives');
-                            b.to.length.should.equal(1);
-                            b.to[0].should.equal('http://test.serandives.com/dummy');
-                            clientId = b.id;
-                            done();
-                        });
-                    });
-                });
+                client = c;
+                createVehicles(100, done);
             });
         });
     });
@@ -100,30 +30,53 @@ describe.skip('GET /clients', function () {
         pot.stop(done);
     });
 
-    it('GET /clients/:id unauthorized', function (done) {
-        request({
-            uri: pot.resolve('accounts', '/apis/v/clients/' + clientId),
-            method: 'GET',
-            json: true
-        }, function (e, r, b) {
-            if (e) {
-                return done(e);
-            }
-            r.statusCode.should.equal(errors.unauthorized().status);
-            should.exist(b);
-            should.exist(b.code);
-            should.exist(b.message);
-            b.code.should.equal(errors.unauthorized().data.code);
-            done();
+    var payload = function (without) {
+        var clone = _.cloneDeep(vehicle);
+        without = without || [];
+        without.forEach(function (w) {
+            delete clone[w];
         });
-    });
+        return clone;
+    };
 
-    it('GET /users/:id', function (done) {
+    var createVehicles = function (count, done) {
+        async.whilst(function () {
+            return count-- > 0
+        }, function (created) {
+            var vehicle = payload();
+            vehicle.price = 1000 * (count + 1);
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'POST',
+                formData: {
+                    data: JSON.stringify(vehicle)
+                },
+                auth: {
+                    bearer: client.token
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return created(e);
+                }
+                r.statusCode.should.equal(201);
+                should.exist(b);
+                should.exist(b.id);
+                should.exist(b.type);
+                b.type.should.equal('suv');
+                should.exist(r.headers['location']);
+                r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));
+                created();
+            });
+        }, done);
+    };
+
+    it('default paging', function (done) {
         request({
-            uri: pot.resolve('accounts', '/apis/v/clients/' + clientId),
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: accessToken
+                bearer: client.token
             },
             json: true
         }, function (e, r, b) {
@@ -132,10 +85,224 @@ describe.skip('GET /clients', function () {
             }
             r.statusCode.should.equal(200);
             should.exist(b);
-            should.exist(b.id);
-            should.exist(b.name);
-            b.id.should.equal(clientId);
-            b.name.should.equal('serandives');
+            should.exist(b.length);
+            b.length.should.equal(20);
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'GET',
+                auth: {
+                    bearer: client.token
+                },
+                qs: {
+                    data: JSON.stringify({
+                        start: 20,
+                        count: 20
+                    })
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(b);
+                should.exist(b.length);
+                b.length.should.equal(20);
+                done();
+            });
+        });
+    });
+
+    it('by price paging', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        start: 20,
+                        count: 20,
+                        sort: {
+                            price: -1
+                        }
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(20);
+            var previous;
+            b.forEach(function (current) {
+                if (!previous) {
+                    previous = current;
+                    return;
+                }
+                previous.price.should.be.above(current.price);
+            });
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'GET',
+                auth: {
+                    bearer: client.token
+                },
+                qs: {
+                    data: JSON.stringify({
+                        paging: {
+                            start: 20,
+                            count: 20,
+                            sort: {
+                                price: 1
+                            }
+                        }
+                    })
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(b);
+                should.exist(b.length);
+                b.length.should.equal(20);
+                var previous;
+                b.forEach(function (current) {
+                    if (!previous) {
+                        previous = current;
+                        return;
+                    }
+                    previous.price.should.be.below(current.price);
+                });
+                done();
+            });
+        });
+    });
+
+    it('invalid sort key', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        start: 20,
+                        count: 20,
+                        sort: {
+                            model: -1
+                        }
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(errors.badRequest().status);
+            should.exist(b);
+            should.exist(b.code);
+            should.exist(b.message);
+            b.code.should.equal(errors.badRequest().data.code);
+            done();
+        });
+    });
+
+    it('invalid sort value', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        start: 20,
+                        count: 20,
+                        sort: {
+                            price: true
+                        }
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(errors.badRequest().status);
+            should.exist(b);
+            should.exist(b.code);
+            should.exist(b.message);
+            b.code.should.equal(errors.badRequest().data.code);
+            done();
+        });
+    });
+
+    it('invalid count', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        start: 20,
+                        count: 101,
+                        sort: {
+                            price: 1
+                        }
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(errors.badRequest().status);
+            should.exist(b);
+            should.exist(b.code);
+            should.exist(b.message);
+            b.code.should.equal(errors.badRequest().data.code);
+            done();
+        });
+    });
+
+    it('invalid data', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.token
+            },
+            qs: {
+                data: 'something'
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(errors.badRequest().status);
+            should.exist(b);
+            should.exist(b.code);
+            should.exist(b.message);
+            b.code.should.equal(errors.badRequest().data.code);
             done();
         });
     });
