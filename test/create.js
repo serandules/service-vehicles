@@ -43,7 +43,7 @@ describe('POST /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'POST',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             }
         }, function (e, r, b) {
             if (e) {
@@ -67,7 +67,7 @@ describe('POST /vehicles', function () {
                 'Content-Type': 'application/xml'
             },
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             }
         }, function (e, r, b) {
             if (e) {
@@ -115,7 +115,7 @@ describe('POST /vehicles', function () {
                 },
                 json: true,
                 auth: {
-                    bearer: client.token
+                    bearer: client.users[0].token
                 }
             }, function (e, r, b) {
                 if (e) {
@@ -147,7 +147,7 @@ describe('POST /vehicles', function () {
                 ]
             },
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             json: true
         }, function (e, r, b) {

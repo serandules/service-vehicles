@@ -20,7 +20,9 @@ var sorters = [
 ];
 
 exports.find = function (req, res, next) {
-    validators.find({}, req, res, function (err) {
+    validators.find({
+        model: Vehicles
+    }, req, res, function (err) {
         if (err) {
             return next(err);
         }

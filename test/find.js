@@ -21,7 +21,12 @@ describe('GET /vehicles', function () {
                     return done(err);
                 }
                 client = c;
-                createVehicles(100, done);
+                createVehicles(client.users[0], 100, function (err) {
+                    if (err) {
+                        return done(err);
+                    }
+                    createVehicles(client.users[1], 100, done);
+                });
             });
         });
     });
@@ -39,7 +44,7 @@ describe('GET /vehicles', function () {
         return clone;
     };
 
-    var createVehicles = function (count, done) {
+    var createVehicles = function (user, count, done) {
         async.whilst(function () {
             return count-- > 0
         }, function (created) {
@@ -52,7 +57,7 @@ describe('GET /vehicles', function () {
                     data: JSON.stringify(vehicle)
                 },
                 auth: {
-                    bearer: client.token
+                    bearer: user.token
                 },
                 json: true
             }, function (e, r, b) {
@@ -76,7 +81,7 @@ describe('GET /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             json: true
         }, function (e, r, b) {
@@ -91,7 +96,7 @@ describe('GET /vehicles', function () {
                 uri: pot.resolve('autos', '/apis/v/vehicles'),
                 method: 'GET',
                 auth: {
-                    bearer: client.token
+                    bearer: client.users[0].token
                 },
                 qs: {
                     data: JSON.stringify({
@@ -118,7 +123,7 @@ describe('GET /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             qs: {
                 data: JSON.stringify({
@@ -146,13 +151,13 @@ describe('GET /vehicles', function () {
                     previous = current;
                     return;
                 }
-                previous.price.should.be.above(current.price);
+                previous.price.should.be.aboveOrEqual(current.price);
             });
             request({
                 uri: pot.resolve('autos', '/apis/v/vehicles'),
                 method: 'GET',
                 auth: {
-                    bearer: client.token
+                    bearer: client.users[0].token
                 },
                 qs: {
                     data: JSON.stringify({
@@ -180,10 +185,155 @@ describe('GET /vehicles', function () {
                         previous = current;
                         return;
                     }
-                    previous.price.should.be.below(current.price);
+                    previous.price.should.be.belowOrEqual(current.price);
                 });
                 done();
             });
+        });
+    });
+
+    it('filter by price', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        start: 20,
+                        count: 20,
+                        sort: {
+                            price: -1
+                        }
+                    },
+                    query: {
+                        price: {
+                            $lte: 50000
+                        }
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(20);
+            var previous;
+            b.forEach(function (current) {
+                current.price.should.be.belowOrEqual(50000);
+                if (!previous) {
+                    previous = current;
+                    return;
+                }
+                previous.price.should.be.aboveOrEqual(current.price);
+            });
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'GET',
+                auth: {
+                    bearer: client.users[0].token
+                },
+                qs: {
+                    data: JSON.stringify({
+                        paging: {
+                            start: 20,
+                            count: 20,
+                            sort: {
+                                price: 1
+                            }
+                        },
+                        query: {
+                            price: {
+                                $lte: 50000
+                            }
+                        }
+                    })
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(b);
+                should.exist(b.length);
+                b.length.should.equal(20);
+                var previous;
+                b.forEach(function (current) {
+                    current.price.should.be.belowOrEqual(50000);
+                    if (!previous) {
+                        previous = current;
+                        return;
+                    }
+                    previous.price.should.be.belowOrEqual(current.price);
+                });
+                done();
+            });
+        });
+    });
+
+    it('filter by user', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            qs: {
+                data: JSON.stringify({
+                    query: {
+                        user: client.users[0].profile.id
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(20);
+            b.forEach(function (vehicle) {
+                should.exist(vehicle.user);
+                vehicle.user.should.be.equal(client.users[0].profile.id);
+            });
+            done();
+        });
+    });
+
+    it('non indexed filter', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            qs: {
+                data: JSON.stringify({
+                    query: {
+                        contacts: 'contacts'
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(errors.badRequest().status);
+            should.exist(b);
+            should.exist(b.code);
+            should.exist(b.message);
+            b.code.should.equal(errors.badRequest().data.code);
+            done();
         });
     });
 
@@ -192,7 +342,7 @@ describe('GET /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             qs: {
                 data: JSON.stringify({
@@ -224,7 +374,7 @@ describe('GET /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             qs: {
                 data: JSON.stringify({
@@ -256,7 +406,7 @@ describe('GET /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             qs: {
                 data: JSON.stringify({
@@ -288,7 +438,7 @@ describe('GET /vehicles', function () {
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
             auth: {
-                bearer: client.token
+                bearer: client.users[0].token
             },
             qs: {
                 data: 'something'
