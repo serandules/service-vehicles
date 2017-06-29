@@ -269,7 +269,7 @@ describe('PUT /vehicles/:id', function () {
         });
     });
 
-    it.only('by unauthorized user', function (done) {
+    it('by unauthorized user', function (done) {
         var v0 = _.cloneDeep(vehicle);
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
