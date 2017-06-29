@@ -6,7 +6,7 @@ var should = require('should');
 var request = require('request');
 var pot = require('pot');
 
-var vehicle = require('./vehicle.json');
+var data = require('./vehicle.json');
 
 describe('POST /vehicles', function () {
     var client;
@@ -30,7 +30,7 @@ describe('POST /vehicles', function () {
     });
 
     var payload = function (without) {
-        var clone = _.cloneDeep(vehicle);
+        var clone = _.cloneDeep(data);
         without = without || [];
         without.forEach(function (w) {
             delete clone[w];
@@ -161,11 +161,10 @@ describe('POST /vehicles', function () {
             b.type.should.equal('suv');
             should.exist(b.photos);
             should.exist(b.photos.length);
-            b.photos.length.should.equal(4);
-            b.photos.forEach(function (path) {
-                should.exist(path);
-                path.should.String();
-                path.should.startWith('images/');
+            b.photos.length.should.equal(2);
+            b.photos.forEach(function (id) {
+                should.exist(id);
+                id.should.String();
             });
             should.exist(r.headers['location']);
             r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));

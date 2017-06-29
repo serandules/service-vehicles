@@ -100,24 +100,27 @@ var save288x162 = function (id, stream, done) {
 };
 
 var update = function (old) {
-    return function (req, res, photos) {
+    return function (req, res, uploaded) {
         log.debug('update callback');
         var data = req.body;
-        photos = data.photos.concat(photos);
-        data.photos = photos;
+        data.photos = data.photos || [];
+        uploaded = data.photos.concat(uploaded);
+        data.photos = uploaded;
 
         var id = req.params.id;
-        Vehicles.update({
+        Vehicles.findOneAndUpdate({
+            user: req.user.id,
             _id: id
-        }, data, function (err, vehicle) {
+        }, data, {new: true}, function (err, vehicle) {
             if (err) {
                 log.error(err);
                 return res.pond(errors.serverError());
             }
-            res.status(204).end();
+            res.locate(vehicle.id).status(200).send(vehicle);
         });
-        old.photos.forEach(function (photo) {
-            var index = photos.indexOf(photo);
+        var existed = old.photos || [];
+        existed.forEach(function (photo) {
+            var index = uploaded.indexOf(photo);
             if (index !== -1) {
                 return;
             }
@@ -133,10 +136,8 @@ var update = function (old) {
 };
 
 var create = function (req, res, photos) {
-    var token = req.token;
-    var user = token.user;
     var data = req.body;
-    data.user = user.id;
+    data.user = req.user.id;
     data.photos = photos;
     Vehicles.create(data, function (err, vehicle) {
         if (err) {
@@ -152,16 +153,15 @@ var process = function (req, res, next) {
     var streams = req.streams['photos'] || [];
     async.each(streams, function (stream, processed) {
         var id = uuid.v4();
-        save288x162(id, stream, function (err, name) {
+        save288x162(id, stream, function (err) {
             if (err) {
                 return processed(err);
             }
-            photos.push(name);
-            save800x450(id, stream, function (err, name) {
+            save800x450(id, stream, function (err) {
                 if (err) {
                     return processed(err);
                 }
-                photos.push(name);
+                photos.push(id);
                 processed();
             });
         });
@@ -226,19 +226,20 @@ module.exports = function (router) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.put('/:id', function (req, res) {
+    router.put('/:id', validators.update, sanitizers.update, function (req, res) {
         if (!mongutils.objectId(req.params.id)) {
             return res.pond(errors.notFound());
         }
         Vehicles.findOne({
-            _id: id
+            user: req.user.id,
+            _id: req.params.id
         }).exec(function (err, vehicle) {
             if (err) {
                 log.error(err);
                 return res.pond(errors.serverError());
             }
             if (!vehicle) {
-                return res.pond(errors.notFound());
+                return res.pond(errors.unauthorized());
             }
             process(req, res, update(vehicle));
         });
@@ -272,6 +273,7 @@ module.exports = function (router) {
             return res.pond(errors.notFound());
         }
         Vehicles.remove({
+            user: req.user.id,
             _id: req.params.id
         }, function (err) {
             if (err) {

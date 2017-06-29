@@ -10,6 +10,13 @@ exports.create = function (req, res, next) {
     }, req, res, next);
 };
 
+exports.update = function (req, res, next) {
+    validators.update({
+        content: 'multipart',
+        model: Vehicles
+    }, req, res, next);
+};
+
 var sorters = [
     'manufacturedAt',
     'seats',
