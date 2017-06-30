@@ -239,7 +239,7 @@ module.exports = function (router) {
                 return res.pond(errors.serverError());
             }
             if (!vehicle) {
-                return res.pond(errors.unauthorized());
+                return res.pond(errors.notFound());
             }
             process(req, res, update(vehicle));
         });
@@ -275,10 +275,13 @@ module.exports = function (router) {
         Vehicles.remove({
             user: req.user.id,
             _id: req.params.id
-        }, function (err) {
+        }, function (err, o) {
             if (err) {
                 log.error(err);
                 return res.pond(errors.serverError());
+            }
+            if (!o.result.n) {
+                return res.pond(errors.notFound());
             }
             res.status(204).end();
         });
