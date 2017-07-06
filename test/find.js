@@ -76,7 +76,7 @@ describe('GET /vehicles', function () {
         }, done);
     };
 
-    it.only('default paging', function (done) {
+    it('default paging', function (done) {
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'GET',
