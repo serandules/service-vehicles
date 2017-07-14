@@ -26,24 +26,24 @@ var sanitizers = require('./sanitizers');
  db.vehicles.ensureIndex({price: 1, createdAt: -1, _id: 1})
 
  db.vehicles.find({}, {price: 1, createdAt: 1})
-    .sort({price: 1, createdAt: -1, _id: 1})
-    .min({
-        price: 1000,
-        createdAt: ISODate("2017-07-04T02:26:24.945Z"),
-        _id: ObjectId("595afcd00c5855fc2e78a073")
-    })
-    .limit(10)
-    .hint({price: 1, createdAt: -1, _id: 1})
+ .sort({price: 1, createdAt: -1, _id: 1})
+ .min({
+ price: 1000,
+ createdAt: ISODate("2017-07-04T02:26:24.945Z"),
+ _id: ObjectId("595afcd00c5855fc2e78a073")
+ })
+ .limit(10)
+ .hint({price: 1, createdAt: -1, _id: 1})
 
  db.vehicles.find({}, {price: 1, createdAt: 1})
-     .sort({price: 1, createdAt: 1, _id: 1})
-     .min({
-         price: 1000,
-         createdAt: ISODate("2017-07-04T02:26:24.945Z"),
-         _id: ObjectId("595afcd00c5855fc2e78a073")
-     })
-     .limit(10)
-     .hint({price: 1, createdAt: 1, _id: 1})
+ .sort({price: 1, createdAt: 1, _id: 1})
+ .min({
+ price: 1000,
+ createdAt: ISODate("2017-07-04T02:26:24.945Z"),
+ _id: ObjectId("595afcd00c5855fc2e78a073")
+ })
+ .limit(10)
+ .hint({price: 1, createdAt: 1, _id: 1})
  */
 
 var paging = {
@@ -207,6 +207,7 @@ var process = function (req, res, next) {
 
 module.exports = function (router) {
     router.use(serandi.pond);
+    router.use(serandi.many);
     router.use(serandi.ctx);
     router.use(auth({
         GET: {
@@ -274,20 +275,13 @@ module.exports = function (router) {
      * /vehicles?data={}
      */
     router.get('/', validators.find, sanitizers.find, function (req, res) {
-        var data = req.query.data || {};
-        utils.merge(data.paging || (data.paging = {}), paging);
-        utils.merge(data.fields || (data.fields = {}), fields);
-        Vehicles.find(data.query)
-            .skip(data.paging.start)
-            .limit(data.paging.count)
-            .sort(data.paging.sort)
-            .exec(function (err, vehicles) {
-                if (err) {
-                    log.error(err);
-                    return res.pond(errors.serverError());
-                }
-                res.send(vehicles);
-            });
+        mongutils.find(Vehicles, req.query.data).exec(function (err, vehicles) {
+            if (err) {
+                log.error(err);
+                return res.pond(errors.serverError());
+            }
+            res.many(vehicles);
+        });
     });
 
     /**

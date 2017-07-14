@@ -5,6 +5,7 @@ var async = require('async');
 var errors = require('errors');
 var should = require('should');
 var request = require('request');
+var links = require('parse-link-header');
 var pot = require('pot');
 
 var vehicle = require('./vehicle.json');
@@ -76,6 +77,22 @@ describe('GET /vehicles', function () {
         }, done);
     };
 
+    var findPages = function (r) {
+        should.exist(r.headers.link);
+        var pages = links(r.headers.link);
+        should.exist(pages.last);
+        should.exist(pages.last.rel);
+        pages.last.rel.should.equal('last');
+        should.exist(pages.last.data);
+        should.exist(pages.last.url);
+        should.exist(pages.next);
+        should.exist(pages.next.rel);
+        pages.next.rel.should.equal('next');
+        should.exist(pages.next.data);
+        should.exist(pages.next.url);
+        return pages;
+    };
+
     it('default paging', function (done) {
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles'),
@@ -100,7 +117,6 @@ describe('GET /vehicles', function () {
                 },
                 qs: {
                     data: JSON.stringify({
-                        start: 20,
                         count: 20
                     })
                 },
@@ -113,6 +129,7 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
+                findPages(r);
                 done();
             });
         });
@@ -128,7 +145,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        start: 20,
                         count: 20,
                         sort: {
                             price: -1
@@ -153,6 +169,7 @@ describe('GET /vehicles', function () {
                 }
                 previous.price.should.be.aboveOrEqual(current.price);
             });
+            findPages(r);
             request({
                 uri: pot.resolve('autos', '/apis/v/vehicles'),
                 method: 'GET',
@@ -162,7 +179,6 @@ describe('GET /vehicles', function () {
                 qs: {
                     data: JSON.stringify({
                         paging: {
-                            start: 20,
                             count: 20,
                             sort: {
                                 price: 1
@@ -187,7 +203,178 @@ describe('GET /vehicles', function () {
                     }
                     previous.price.should.be.belowOrEqual(current.price);
                 });
+                findPages(r);
                 done();
+            });
+        });
+    });
+
+    it('by price and createdAt ascending paging', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        count: 20,
+                        sort: {
+                            price: -1,
+                            createdAt: -1
+                        }
+                    },
+                    fields: {
+                        createdAt: 1,
+                        price: 1
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, first) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(first);
+            should.exist(first.length);
+            first.length.should.equal(20);
+            var previous;
+            first.forEach(function (current) {
+                if (!previous) {
+                    previous = current;
+                    return;
+                }
+                previous.price.should.be.aboveOrEqual(current.price);
+            });
+            var firstPages = findPages(r);
+            request({
+                uri: firstPages.next.url,
+                method: 'GET',
+                auth: {
+                    bearer: client.users[0].token
+                },
+                json: true
+            }, function (e, r, second) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(second);
+                should.exist(second.length);
+                second.length.should.equal(20);
+                var previous;
+                second.forEach(function (current) {
+                    if (!previous) {
+                        previous = current;
+                        return;
+                    }
+                    previous.price.should.be.aboveOrEqual(current.price);
+                });
+                var secondPages = findPages(r);
+                request({
+                    uri: secondPages.last.url,
+                    method: 'GET',
+                    auth: {
+                        bearer: client.users[0].token
+                    },
+                    json: true
+                }, function (e, r, b) {
+                    if (e) {
+                        return done(e);
+                    }
+                    r.statusCode.should.equal(200);
+                    should.exist(b);
+                    first.should.deepEqual(b);
+                    firstPages = findPages(r);
+                    done();
+                });
+            });
+        });
+    });
+
+    it('by price and createdAt descending paging', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            qs: {
+                data: JSON.stringify({
+                    paging: {
+                        count: 20,
+                        sort: {
+                            price: 1,
+                            createdAt: -1
+                        }
+                    },
+                    fields: {
+                        createdAt: 1,
+                        price: 1
+                    }
+                })
+            },
+            json: true
+        }, function (e, r, first) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(first);
+            should.exist(first.length);
+            first.length.should.equal(20);
+            var previous;
+            first.forEach(function (current) {
+                if (!previous) {
+                    previous = current;
+                    return;
+                }
+                previous.price.should.be.belowOrEqual(current.price);
+            });
+            var firstPages = findPages(r);
+            request({
+                uri: firstPages.next.url,
+                method: 'GET',
+                auth: {
+                    bearer: client.users[0].token
+                },
+                json: true
+            }, function (e, r, second) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(second);
+                should.exist(second.length);
+                second.length.should.equal(20);
+                var previous;
+                second.forEach(function (current) {
+                    if (!previous) {
+                        previous = current;
+                        return;
+                    }
+                    previous.price.should.be.belowOrEqual(current.price);
+                });
+                var secondPages = findPages(r);
+                request({
+                    uri: secondPages.last.url,
+                    method: 'GET',
+                    auth: {
+                        bearer: client.users[0].token
+                    },
+                    json: true
+                }, function (e, r, b) {
+                    if (e) {
+                        return done(e);
+                    }
+                    r.statusCode.should.equal(200);
+                    should.exist(b);
+                    first.should.deepEqual(b);
+                    firstPages = findPages(r);
+                    done();
+                });
             });
         });
     });
@@ -202,7 +389,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        start: 20,
                         count: 20,
                         sort: {
                             price: -1
@@ -242,7 +428,6 @@ describe('GET /vehicles', function () {
                 qs: {
                     data: JSON.stringify({
                         paging: {
-                            start: 20,
                             count: 20,
                             sort: {
                                 price: 1
@@ -347,7 +532,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        start: 20,
                         count: 20,
                         sort: {
                             model: -1
@@ -379,7 +563,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        start: 20,
                         count: 20,
                         sort: {
                             price: true
@@ -411,7 +594,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        start: 20,
                         count: 101,
                         sort: {
                             price: 1
