@@ -93,6 +93,28 @@ describe('GET /vehicles', function () {
         return pages;
     };
 
+    var findFirstPages = function (r) {
+        should.exist(r.headers.link);
+        var pages = links(r.headers.link);
+        should.exist(pages.next);
+        should.exist(pages.next.rel);
+        pages.next.rel.should.equal('next');
+        should.exist(pages.next.data);
+        should.exist(pages.next.url);
+        return pages;
+    };
+
+    var findLastPages = function (r) {
+        should.exist(r.headers.link);
+        var pages = links(r.headers.link);
+        should.exist(pages.last);
+        should.exist(pages.last.rel);
+        pages.last.rel.should.equal('last');
+        should.exist(pages.last.data);
+        should.exist(pages.last.url);
+        return pages;
+    };
+
     it('default paging', function (done) {
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles'),
@@ -129,7 +151,7 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
-                findPages(r);
+                findFirstPages(r);
                 done();
             });
         });
@@ -145,11 +167,11 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 20,
                         sort: {
                             price: -1
                         }
-                    }
+                    },
+                    count: 20
                 })
             },
             json: true
@@ -169,7 +191,7 @@ describe('GET /vehicles', function () {
                 }
                 previous.price.should.be.aboveOrEqual(current.price);
             });
-            findPages(r);
+            findFirstPages(r);
             request({
                 uri: pot.resolve('autos', '/apis/v/vehicles'),
                 method: 'GET',
@@ -179,7 +201,6 @@ describe('GET /vehicles', function () {
                 qs: {
                     data: JSON.stringify({
                         paging: {
-                            count: 20,
                             sort: {
                                 price: 1
                             }
@@ -203,7 +224,7 @@ describe('GET /vehicles', function () {
                     }
                     previous.price.should.be.belowOrEqual(current.price);
                 });
-                findPages(r);
+                findFirstPages(r);
                 done();
             });
         });
@@ -219,7 +240,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 20,
                         sort: {
                             price: -1,
                             createdAt: -1
@@ -228,7 +248,8 @@ describe('GET /vehicles', function () {
                     fields: {
                         createdAt: 1,
                         price: 1
-                    }
+                    },
+                    count: 20
                 })
             },
             json: true
@@ -248,7 +269,7 @@ describe('GET /vehicles', function () {
                 }
                 previous.price.should.be.aboveOrEqual(current.price);
             });
-            var firstPages = findPages(r);
+            var firstPages = findFirstPages(r);
             request({
                 uri: firstPages.next.url,
                 method: 'GET',
@@ -287,7 +308,7 @@ describe('GET /vehicles', function () {
                     r.statusCode.should.equal(200);
                     should.exist(b);
                     first.should.deepEqual(b);
-                    firstPages = findPages(r);
+                    firstPages = findFirstPages(r);
                     done();
                 });
             });
@@ -304,7 +325,6 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 20,
                         sort: {
                             price: 1,
                             createdAt: -1
@@ -313,7 +333,8 @@ describe('GET /vehicles', function () {
                     fields: {
                         createdAt: 1,
                         price: 1
-                    }
+                    },
+                    count: 20
                 })
             },
             json: true
@@ -333,7 +354,7 @@ describe('GET /vehicles', function () {
                 }
                 previous.price.should.be.belowOrEqual(current.price);
             });
-            var firstPages = findPages(r);
+            var firstPages = findFirstPages(r);
             request({
                 uri: firstPages.next.url,
                 method: 'GET',
@@ -372,7 +393,7 @@ describe('GET /vehicles', function () {
                     r.statusCode.should.equal(200);
                     should.exist(b);
                     first.should.deepEqual(b);
-                    firstPages = findPages(r);
+                    firstPages.should.deepEqual(findFirstPages(r));
                     done();
                 });
             });
@@ -389,16 +410,16 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 20,
                         sort: {
                             price: -1
+                        },
+                        query: {
+                            price: {
+                                $lte: 50000
+                            }
                         }
                     },
-                    query: {
-                        price: {
-                            $lte: 50000
-                        }
-                    }
+                    count: 20
                 })
             },
             json: true
@@ -428,16 +449,16 @@ describe('GET /vehicles', function () {
                 qs: {
                     data: JSON.stringify({
                         paging: {
-                            count: 20,
                             sort: {
                                 price: 1
+                            },
+                            query: {
+                                price: {
+                                    $lte: 50000
+                                }
                             }
                         },
-                        query: {
-                            price: {
-                                $lte: 50000
-                            }
-                        }
+                        count: 20
                     })
                 },
                 json: true
@@ -472,8 +493,10 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    query: {
-                        user: client.users[0].profile.id
+                    paging: {
+                        query: {
+                            user: client.users[0].profile.id
+                        }
                     }
                 })
             },
@@ -503,8 +526,10 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    query: {
-                        contacts: 'contacts'
+                    paging: {
+                        query: {
+                            contacts: 'contacts'
+                        }
                     }
                 })
             },
@@ -532,11 +557,11 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 20,
                         sort: {
                             model: -1
                         }
-                    }
+                    },
+                    count: 20
                 })
             },
             json: true
@@ -563,11 +588,11 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 20,
                         sort: {
                             price: true
                         }
-                    }
+                    },
+                    count: 20
                 })
             },
             json: true
@@ -594,11 +619,11 @@ describe('GET /vehicles', function () {
             qs: {
                 data: JSON.stringify({
                     paging: {
-                        count: 101,
                         sort: {
                             price: 1
                         }
-                    }
+                    },
+                    count: 101
                 })
             },
             json: true

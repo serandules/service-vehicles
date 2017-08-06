@@ -275,12 +275,12 @@ module.exports = function (router) {
      * /vehicles?data={}
      */
     router.get('/', validators.find, sanitizers.find, function (req, res) {
-        mongutils.find(Vehicles, req.query.data).exec(function (err, vehicles) {
+        mongutils.find(Vehicles, req.query.data, function (err, vehicles, paging) {
             if (err) {
                 log.error(err);
                 return res.pond(errors.serverError());
             }
-            res.many(vehicles);
+            res.many(vehicles, paging);
         });
     });
 
