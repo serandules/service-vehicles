@@ -166,12 +166,9 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            price: -1
-                        }
-                    },
-                    count: 20
+                    sort: {
+                        price: -1
+                    }
                 })
             },
             json: true
@@ -200,10 +197,8 @@ describe('GET /vehicles', function () {
                 },
                 qs: {
                     data: JSON.stringify({
-                        paging: {
-                            sort: {
-                                price: 1
-                            }
+                        sort: {
+                            price: 1
                         }
                     })
                 },
@@ -239,11 +234,9 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            price: -1,
-                            createdAt: -1
-                        }
+                    sort: {
+                        price: -1,
+                        createdAt: -1
                     },
                     fields: {
                         createdAt: 1,
@@ -324,11 +317,9 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            price: 1,
-                            createdAt: -1
-                        }
+                    sort: {
+                        price: 1,
+                        createdAt: -1
                     },
                     fields: {
                         createdAt: 1,
@@ -409,14 +400,12 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            price: -1
-                        },
-                        query: {
-                            price: {
-                                $lte: 50000
-                            }
+                    sort: {
+                        price: -1
+                    },
+                    query: {
+                        price: {
+                            $lte: 50000
                         }
                     },
                     count: 20
@@ -448,14 +437,12 @@ describe('GET /vehicles', function () {
                 },
                 qs: {
                     data: JSON.stringify({
-                        paging: {
-                            sort: {
-                                price: 1
-                            },
-                            query: {
-                                price: {
-                                    $lte: 50000
-                                }
+                        sort: {
+                            price: 1
+                        },
+                        query: {
+                            price: {
+                                $lte: 50000
                             }
                         },
                         count: 20
@@ -493,10 +480,8 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        query: {
-                            user: client.users[0].profile.id
-                        }
+                    query: {
+                        user: client.users[0].profile.id
                     }
                 })
             },
@@ -526,10 +511,8 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        query: {
-                            contacts: 'contacts'
-                        }
+                    query: {
+                        contacts: 'contacts'
                     }
                 })
             },
@@ -556,10 +539,8 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            model: -1
-                        }
+                    sort: {
+                        model: -1
                     },
                     count: 20
                 })
@@ -587,10 +568,8 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            price: true
-                        }
+                    sort: {
+                        price: true
                     },
                     count: 20
                 })
@@ -618,10 +597,8 @@ describe('GET /vehicles', function () {
             },
             qs: {
                 data: JSON.stringify({
-                    paging: {
-                        sort: {
-                            price: 1
-                        }
+                    sort: {
+                        price: 1
                     },
                     count: 101
                 })
