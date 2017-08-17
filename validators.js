@@ -12,6 +12,7 @@ exports.create = function (req, res, next) {
 
 exports.update = function (req, res, next) {
     validators.update({
+        id: req.params.id,
         content: 'multipart',
         model: Vehicles
     }, req, res, next);

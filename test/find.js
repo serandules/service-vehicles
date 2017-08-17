@@ -127,6 +127,7 @@ describe('GET /vehicles', function () {
             if (e) {
                 return done(e);
             }
+            console.log(b)
             r.statusCode.should.equal(200);
             should.exist(b);
             should.exist(b.length);

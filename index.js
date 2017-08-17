@@ -161,10 +161,8 @@ var update = function (old) {
 };
 
 var create = function (req, res, photos) {
-    var data = req.body;
-    data.user = req.user.id;
-    data.photos = photos;
-    Vehicles.create(data, function (err, vehicle) {
+    req.body.photos = photos;
+    Vehicles.createIt(req, res, req.body, function (err, vehicle) {
         if (err) {
             log.error(err);
             return res.pond(errors.serverError());
