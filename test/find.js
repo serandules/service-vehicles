@@ -26,7 +26,12 @@ describe('GET /vehicles', function () {
                     if (err) {
                         return done(err);
                     }
-                    createVehicles(client.users[1], 100, done);
+                    createVehicles(client.users[1], 100, function (err) {
+                        if (err) {
+                            return done(err);
+                        }
+                        createVehicles(client.users[2], 100, done);
+                    });
                 });
             });
         });
@@ -127,7 +132,6 @@ describe('GET /vehicles', function () {
             if (e) {
                 return done(e);
             }
-            console.log(b)
             r.statusCode.should.equal(200);
             should.exist(b);
             should.exist(b.length);
@@ -639,6 +643,106 @@ describe('GET /vehicles', function () {
             should.exist(b.message);
             b.code.should.equal(errors.badRequest().data.code);
             done();
+        });
+    });
+
+    it('by user0', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(20);
+            b.forEach(function (v) {
+                should.exist(v.user);
+                v.user.should.equal(client.users[0].profile.id);
+            });
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'GET',
+                auth: {
+                    bearer: client.users[0].token
+                },
+                qs: {
+                    data: JSON.stringify({
+                        count: 20
+                    })
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(b);
+                should.exist(b.length);
+                b.length.should.equal(20);
+                b.forEach(function (v) {
+                    should.exist(v.user);
+                    v.user.should.equal(client.users[0].profile.id);
+                });
+                findFirstPages(r);
+                done();
+            });
+        });
+    });
+
+    it('by user1', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[1].token
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(20);
+            b.forEach(function (v) {
+                should.exist(v.user);
+                v.user.should.equal(client.users[1].profile.id);
+            });
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'GET',
+                auth: {
+                    bearer: client.users[1].token
+                },
+                qs: {
+                    data: JSON.stringify({
+                        count: 20
+                    })
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(b);
+                should.exist(b.length);
+                b.length.should.equal(20);
+                b.forEach(function (v) {
+                    should.exist(v.user);
+                    v.user.should.equal(client.users[1].profile.id);
+                });
+                findFirstPages(r);
+                done();
+            });
         });
     });
 });
