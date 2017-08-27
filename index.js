@@ -225,13 +225,8 @@ module.exports = function (router) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.get('/:id', function (req, res) {
-        if (!mongutils.objectId(req.params.id)) {
-            return res.pond(errors.notFound());
-        }
-        Vehicles.findOne({
-            _id: req.params.id
-        }).populate('location').exec(function (err, vehicle) {
+    router.get('/:id', validators.findOne, sanitizers.findOne, function (req, res) {
+        mongutils.findOne(Vehicles, req.query, function (err, vehicle) {
             if (err) {
                 log.error(err);
                 return res.pond(errors.serverError());
@@ -247,9 +242,6 @@ module.exports = function (router) {
      * /vehicles/51bfd3bd5a51f1722d000001
      */
     router.put('/:id', validators.update, sanitizers.update, function (req, res) {
-        if (!mongutils.objectId(req.params.id)) {
-            return res.pond(errors.notFound());
-        }
         Vehicles.findOne({
             user: req.user.id,
             _id: req.params.id

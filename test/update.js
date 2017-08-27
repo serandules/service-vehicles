@@ -301,4 +301,29 @@ describe('PUT /vehicles/:id', function () {
             done();
         });
     });
+
+    it('invalid id', function (done) {
+        var v0 = _.cloneDeep(vehicle);
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles/invalid'),
+            method: 'PUT',
+            formData: {
+                data: JSON.stringify(v0)
+            },
+            auth: {
+                bearer: client.users[1].token
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(errors.notFound().status);
+            should.exist(b);
+            should.exist(b.code);
+            should.exist(b.message);
+            b.code.should.equal(errors.notFound().data.code);
+            done();
+        });
+    });
 });

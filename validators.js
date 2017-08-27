@@ -19,7 +19,19 @@ exports.update = function (req, res, next) {
 };
 
 exports.find = function (req, res, next) {
-    validators.find({
+    validators.query(req, res, function (err) {
+        if (err) {
+            return next(err);
+        }
+        validators.find({
+            model: Vehicles
+        }, req, res, next);
+    });
+};
+
+exports.findOne = function (req, res, next) {
+    validators.findOne({
+        id: req.params.id,
         model: Vehicles
     }, req, res, next);
 };

@@ -12,6 +12,7 @@ var vehicle = require('./vehicle.json');
 
 describe('GET /vehicles', function () {
     var client;
+    var groups;
     before(function (done) {
         pot.start(function (err) {
             if (err) {
@@ -22,15 +23,16 @@ describe('GET /vehicles', function () {
                     return done(err);
                 }
                 client = c;
-                createVehicles(client.users[0], 100, function (err) {
+                pot.groups(function (err, g) {
                     if (err) {
                         return done(err);
                     }
-                    createVehicles(client.users[1], 100, function (err) {
+                    groups = g;
+                    createVehicles(client.users[0], 100, function (err) {
                         if (err) {
                             return done(err);
                         }
-                        createVehicles(client.users[2], 100, done);
+                        createVehicles(client.users[1], 100, done);
                     });
                 });
             });
@@ -120,6 +122,17 @@ describe('GET /vehicles', function () {
         return pages;
     };
 
+    var validateVehicles = function (vehicles) {
+        vehicles.forEach(function (vehicle) {
+           should.exist(vehicle.id);
+           should.exist(vehicle.user);
+           should.exist(vehicle.createdAt);
+           should.exist(vehicle.updatedAt);
+           should.not.exist(vehicle._id);
+           should.not.exist(vehicle.__v);
+        });
+    };
+
     it('default paging', function (done) {
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles'),
@@ -136,6 +149,7 @@ describe('GET /vehicles', function () {
             should.exist(b);
             should.exist(b.length);
             b.length.should.equal(20);
+            validateVehicles(b);
             request({
                 uri: pot.resolve('autos', '/apis/v/vehicles'),
                 method: 'GET',
@@ -156,6 +170,7 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
+                validateVehicles(b);
                 findFirstPages(r);
                 done();
             });
@@ -185,6 +200,7 @@ describe('GET /vehicles', function () {
             should.exist(b);
             should.exist(b.length);
             b.length.should.equal(20);
+            validateVehicles(b);
             var previous;
             b.forEach(function (current) {
                 if (!previous) {
@@ -216,6 +232,7 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
+                validateVehicles(b);
                 var previous;
                 b.forEach(function (current) {
                     if (!previous) {
@@ -245,7 +262,9 @@ describe('GET /vehicles', function () {
                     },
                     fields: {
                         createdAt: 1,
-                        price: 1
+                        updatedAt: 1,
+                        price: 1,
+                        user: 1
                     },
                     count: 20
                 })
@@ -259,6 +278,7 @@ describe('GET /vehicles', function () {
             should.exist(first);
             should.exist(first.length);
             first.length.should.equal(20);
+            validateVehicles(first);
             var previous;
             first.forEach(function (current) {
                 if (!previous) {
@@ -283,6 +303,7 @@ describe('GET /vehicles', function () {
                 should.exist(second);
                 should.exist(second.length);
                 second.length.should.equal(20);
+                validateVehicles(second);
                 var previous;
                 second.forEach(function (current) {
                     if (!previous) {
@@ -328,7 +349,9 @@ describe('GET /vehicles', function () {
                     },
                     fields: {
                         createdAt: 1,
-                        price: 1
+                        updatedAt: 1,
+                        price: 1,
+                        user: 1
                     },
                     count: 20
                 })
@@ -342,6 +365,7 @@ describe('GET /vehicles', function () {
             should.exist(first);
             should.exist(first.length);
             first.length.should.equal(20);
+            validateVehicles(first);
             var previous;
             first.forEach(function (current) {
                 if (!previous) {
@@ -366,6 +390,7 @@ describe('GET /vehicles', function () {
                 should.exist(second);
                 should.exist(second.length);
                 second.length.should.equal(20);
+                validateVehicles(second);
                 var previous;
                 second.forEach(function (current) {
                     if (!previous) {
@@ -425,6 +450,7 @@ describe('GET /vehicles', function () {
             should.exist(b);
             should.exist(b.length);
             b.length.should.equal(20);
+            validateVehicles(b);
             var previous;
             b.forEach(function (current) {
                 current.price.should.be.belowOrEqual(50000);
@@ -462,6 +488,7 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
+                validateVehicles(b);
                 var previous;
                 b.forEach(function (current) {
                     current.price.should.be.belowOrEqual(50000);
@@ -499,6 +526,7 @@ describe('GET /vehicles', function () {
             should.exist(b);
             should.exist(b.length);
             b.length.should.equal(20);
+            validateVehicles(b);
             b.forEach(function (vehicle) {
                 should.exist(vehicle.user);
                 vehicle.user.should.be.equal(client.users[0].profile.id);
@@ -662,8 +690,8 @@ describe('GET /vehicles', function () {
             should.exist(b);
             should.exist(b.length);
             b.length.should.equal(20);
+            validateVehicles(b);
             b.forEach(function (v) {
-                should.exist(v.user);
                 v.user.should.equal(client.users[0].profile.id);
             });
             request({
@@ -686,8 +714,8 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
+                validateVehicles(b);
                 b.forEach(function (v) {
-                    should.exist(v.user);
                     v.user.should.equal(client.users[0].profile.id);
                 });
                 findFirstPages(r);
@@ -712,8 +740,8 @@ describe('GET /vehicles', function () {
             should.exist(b);
             should.exist(b.length);
             b.length.should.equal(20);
+            validateVehicles(b);
             b.forEach(function (v) {
-                should.exist(v.user);
                 v.user.should.equal(client.users[1].profile.id);
             });
             request({
@@ -736,12 +764,136 @@ describe('GET /vehicles', function () {
                 should.exist(b);
                 should.exist(b.length);
                 b.length.should.equal(20);
+                validateVehicles(b);
                 b.forEach(function (v) {
-                    should.exist(v.user);
                     v.user.should.equal(client.users[1].profile.id);
                 });
                 findFirstPages(r);
                 done();
+            });
+        });
+    });
+
+    it('by user2', function (done) {
+        createVehicles(client.users[2], 100, function (err) {
+            if (err) {
+                return done(err);
+            }
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles'),
+                method: 'GET',
+                auth: {
+                    bearer: client.users[2].token
+                },
+                qs: {
+                    data: JSON.stringify({
+                        count: 100
+                    })
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(200);
+                should.exist(b);
+                should.exist(b.length);
+                b.length.should.equal(100);
+                async.each(b, function (v, ran) {
+                    should.exist(v.user);
+                    v.user.should.equal(client.users[2].profile.id);
+                    v.permissions.push({
+                        group: groups.public.id,
+                        actions: ['read']
+                    });
+                    request({
+                        uri: pot.resolve('autos', '/apis/v/vehicles/' + v.id),
+                        method: 'PUT',
+                        formData: {
+                            data: JSON.stringify(v)
+                        },
+                        auth: {
+                            bearer: client.users[2].token
+                        },
+                        json: true
+                    }, function (e, r, b) {
+                        if (e) {
+                            return ran(e);
+                        }
+                        r.statusCode.should.equal(200);
+                        ran();
+                    });
+                }, function (err) {
+                    if (err) {
+                        return done(err);
+                    }
+                    request({
+                        uri: pot.resolve('autos', '/apis/v/vehicles'),
+                        method: 'GET',
+                        auth: {
+                            bearer: client.users[1].token
+                        },
+                        qs: {
+                            data: JSON.stringify({
+                                count: 100
+                            })
+                        },
+                        json: true
+                    }, function (e, r, b) {
+                        if (e) {
+                            return done(e);
+                        }
+                        r.statusCode.should.equal(200);
+                        should.exist(b);
+                        should.exist(b.length);
+                        b.length.should.equal(100);
+                        var user1 = 0;
+                        var user2 = 0;
+                        var users = [client.users[1].profile.id, client.users[2].profile.id];
+                        b.forEach(function (v) {
+                            should.exist(v.user);
+                            var index = users.indexOf(v.user);
+                            index.should.not.equal(-1);
+                            if (index === 0) {
+                                return user1++
+                            }
+                            if (index === 1) {
+                                return user2++
+                            }
+                        });
+                        var firstPages = findFirstPages(r);
+                        request({
+                            uri: firstPages.next.url,
+                            method: 'GET',
+                            auth: {
+                                bearer: client.users[1].token
+                            },
+                            json: true
+                        }, function (e, r, b) {
+                            if (e) {
+                                return done(e);
+                            }
+                            r.statusCode.should.equal(200);
+                            should.exist(b);
+                            should.exist(b.length);
+                            b.length.should.equal(100);
+                            b.forEach(function (v) {
+                                should.exist(v.user);
+                                var index = users.indexOf(v.user);
+                                index.should.not.equal(-1);
+                                if (index === 0) {
+                                    return user1++
+                                }
+                                if (index === 1) {
+                                    return user2++
+                                }
+                            });
+                            user1.should.equal(100);
+                            user2.should.equal(100);
+                            done();
+                        });
+                    });
+                });
             });
         });
     });
