@@ -188,4 +188,113 @@ describe('GET /vehicles/:id', function () {
             });
         });
     });
+
+
+    it('can be accessed by anyone when public', function (done) {
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+                bearer: client.users[0].token
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(1);
+            validateVehicles(b);
+            var vehicle = b[0];
+            request({
+                uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+                method: 'GET',
+                auth: {
+                    bearer: client.users[1].token
+                },
+                json: true
+            }, function (e, r, b) {
+                if (e) {
+                    return done(e);
+                }
+                r.statusCode.should.equal(errors.notFound().status);
+                should.exist(b);
+                should.exist(b.code);
+                should.exist(b.message);
+                b.code.should.equal(errors.notFound().data.code);
+                request({
+                    uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+                    method: 'GET',
+                    auth: {
+                        bearer: client.users[1].token
+                    },
+                    json: true
+                }, function (e, r, b) {
+                    if (e) {
+                        return done(e);
+                    }
+                    r.statusCode.should.equal(errors.notFound().status);
+                    should.exist(b);
+                    should.exist(b.code);
+                    should.exist(b.message);
+                    b.code.should.equal(errors.notFound().data.code);
+                    vehicle.permissions.push({
+                        group: groups.public.id,
+                        actions: ['read']
+                    });
+                    request({
+                        uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+                        method: 'PUT',
+                        formData: {
+                            data: JSON.stringify(vehicle)
+                        },
+                        auth: {
+                            bearer: client.users[0].token
+                        },
+                        json: true
+                    }, function (e, r, b) {
+                        if (e) {
+                            return done(e);
+                        }
+                        r.statusCode.should.equal(200);
+                        should.exist(b);
+                        validateVehicles([b]);
+                        request({
+                            uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+                            method: 'GET',
+                            auth: {
+                                bearer: client.users[1].token
+                            },
+                            json: true
+                        }, function (e, r, b) {
+                            if (e) {
+                                return done(e);
+                            }
+                            r.statusCode.should.equal(200);
+                            should.exist(b);
+                            validateVehicles([b]);
+                            request({
+                                uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+                                method: 'GET',
+                                auth: {
+                                    bearer: client.users[2].token
+                                },
+                                json: true
+                            }, function (e, r, b) {
+                                if (e) {
+                                    return done(e);
+                                }
+                                r.statusCode.should.equal(200);
+                                should.exist(b);
+                                validateVehicles([b]);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
 });
