@@ -12,28 +12,19 @@ describe('PUT /vehicles/:id', function () {
     var client;
     var vehicle;
     before(function (done) {
-        pot.start(function (err) {
+        pot.client(function (err, c) {
             if (err) {
                 return done(err);
             }
-            pot.client(function (err, c) {
+            client = c;
+            create(client.users[0], function (err, v) {
                 if (err) {
                     return done(err);
                 }
-                client = c;
-                create(client.users[0], function (err, v) {
-                    if (err) {
-                        return done(err);
-                    }
-                    vehicle = v;
-                    done();
-                });
+                vehicle = v;
+                done();
             });
         });
-    });
-
-    after(function (done) {
-        pot.stop(done);
     });
 
     var payload = function (without) {

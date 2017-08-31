@@ -11,22 +11,13 @@ var data = require('./vehicle.json');
 describe('POST /vehicles', function () {
     var client;
     before(function (done) {
-        pot.start(function (err) {
+        pot.client(function (err, c) {
             if (err) {
                 return done(err);
             }
-            pot.client(function (err, c) {
-                if (err) {
-                    return done(err);
-                }
-                client = c;
-                done();
-            });
+            client = c;
+            done();
         });
-    });
-
-    after(function (done) {
-        pot.stop(done);
     });
 
     var payload = function (without) {

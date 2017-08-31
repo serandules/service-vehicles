@@ -13,7 +13,7 @@ describe('GET /vehicles/:id', function () {
     var client;
     var groups;
     before(function (done) {
-        pot.start(function (err) {
+        pot.drop('vehicles', function (err) {
             if (err) {
                 return done(err);
             }
@@ -36,10 +36,6 @@ describe('GET /vehicles/:id', function () {
                 });
             });
         });
-    });
-
-    after(function (done) {
-        pot.stop(done);
     });
 
     var payload = function (without) {

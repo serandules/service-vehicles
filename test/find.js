@@ -14,33 +14,24 @@ describe('GET /vehicles', function () {
     var client;
     var groups;
     before(function (done) {
-        pot.start(function (err) {
+        pot.client(function (err, c) {
             if (err) {
                 return done(err);
             }
-            pot.client(function (err, c) {
+            client = c;
+            pot.groups(function (err, g) {
                 if (err) {
                     return done(err);
                 }
-                client = c;
-                pot.groups(function (err, g) {
+                groups = g;
+                createVehicles(client.users[0], 100, function (err) {
                     if (err) {
                         return done(err);
                     }
-                    groups = g;
-                    createVehicles(client.users[0], 100, function (err) {
-                        if (err) {
-                            return done(err);
-                        }
-                        createVehicles(client.users[1], 100, done);
-                    });
+                    createVehicles(client.users[1], 100, done);
                 });
             });
         });
-    });
-
-    after(function (done) {
-        pot.stop(done);
     });
 
     var payload = function (without) {
@@ -124,12 +115,12 @@ describe('GET /vehicles', function () {
 
     var validateVehicles = function (vehicles) {
         vehicles.forEach(function (vehicle) {
-           should.exist(vehicle.id);
-           should.exist(vehicle.user);
-           should.exist(vehicle.createdAt);
-           should.exist(vehicle.updatedAt);
-           should.not.exist(vehicle._id);
-           should.not.exist(vehicle.__v);
+            should.exist(vehicle.id);
+            should.exist(vehicle.user);
+            should.exist(vehicle.createdAt);
+            should.exist(vehicle.updatedAt);
+            should.not.exist(vehicle._id);
+            should.not.exist(vehicle.__v);
         });
     };
 
