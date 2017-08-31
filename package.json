@@ -19,7 +19,7 @@
     "lodash": "4.17.4",
     "logger": "serandules/logger#master",
     "utils": "serandules/utils#master",
-    "vehicle": "serandules/vehicle#master",
+    "model-vehicles": "serandules/model-vehicles#master",
     "mongutils": "serandules/mongutils#master",
     "formida": "serandules/formida#master",
     "hub-agent": "serandules/hub-agent#master",
