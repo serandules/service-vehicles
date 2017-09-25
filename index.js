@@ -204,7 +204,6 @@ var process = function (req, res, next) {
 };
 
 module.exports = function (router) {
-    router.use(serandi.pond);
     router.use(serandi.many);
     router.use(serandi.ctx);
     router.use(auth({
@@ -242,10 +241,7 @@ module.exports = function (router) {
      * /vehicles/51bfd3bd5a51f1722d000001
      */
     router.put('/:id', validators.update, sanitizers.update, function (req, res) {
-        Vehicles.findOne({
-            user: req.user.id,
-            _id: req.params.id
-        }).exec(function (err, vehicle) {
+        Vehicles.findOne(req.query).exec(function (err, vehicle) {
             if (err) {
                 log.error(err);
                 return res.pond(errors.serverError());
