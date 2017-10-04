@@ -81,7 +81,6 @@ describe('POST /vehicles', function () {
         'make',
         'model',
         'manufacturedAt',
-        'country',
         'fuel',
         'transmission',
         'doors',
