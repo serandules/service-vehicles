@@ -11,9 +11,9 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - mongodb-upstart
+      - mongodb-3.0-precise
     packages:
       - g++-4.8
-install:
-  - wget http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.4.7.tgz
-  - tar xzf mongodb-linux-x86_64-3.4.7.tgz
-  - ${PWD}/mongodb-linux-x86_64-3.4.7/bin/mongod --version
+      - mongodb-org-server
+      - mongodb-org-shell
