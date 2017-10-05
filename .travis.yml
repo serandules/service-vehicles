@@ -17,5 +17,3 @@ addons:
       - mongodb-org-server
 services:
   - mongodb
-before_script:
-  - sleep 15
