@@ -21,42 +21,7 @@ var Vehicles = require('model-vehicles');
 var validators = require('./validators');
 var sanitizers = require('./sanitizers');
 
-/*
- db.vehicles.ensureIndex({price: 1, createdAt: 1, _id: 1})
- db.vehicles.ensureIndex({price: 1, createdAt: -1, _id: 1})
-
- db.vehicles.find({}, {price: 1, createdAt: 1})
- .sort({price: 1, createdAt: -1, _id: 1})
- .min({
- price: 1000,
- createdAt: ISODate("2017-07-04T02:26:24.945Z"),
- _id: ObjectId("595afcd00c5855fc2e78a073")
- })
- .limit(10)
- .hint({price: 1, createdAt: -1, _id: 1})
-
- db.vehicles.find({}, {price: 1, createdAt: 1})
- .sort({price: 1, createdAt: 1, _id: 1})
- .min({
- price: 1000,
- createdAt: ISODate("2017-07-04T02:26:24.945Z"),
- _id: ObjectId("595afcd00c5855fc2e78a073")
- })
- .limit(10)
- .hint({price: 1, createdAt: 1, _id: 1})
- */
-
-var paging = {
-    start: 0,
-    count: 20,
-    sort: ''
-};
-
-var fields = {
-    '*': true
-};
-
-var bucket = 'autos.serandives.com';
+var bucket = utils.bucket('autos.serandives.com');
 
 var s3Client = knox.createClient({
     secure: false,
