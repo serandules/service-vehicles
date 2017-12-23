@@ -1,13 +1,8 @@
 var log = require('logger')('service-vehicles:index');
-var nconf = require('nconf');
-var AWS = require('aws-sdk');
-var knox = require('knox');
-var path = require('path');
 var fs = require('fs');
 var uuid = require('node-uuid');
 var async = require('async');
 var sharp = require('sharp');
-var MultiPartUpload = require('knox-mpu');
 var express = require('express');
 var bodyParser = require('body-parser');
 
@@ -23,15 +18,6 @@ var validators = require('./validators');
 var sanitizers = require('./sanitizers');
 
 var bucket = utils.bucket('autos.serandives.com');
-
-var s3Client = knox.createClient({
-    secure: false,
-    key: nconf.get('AWS_KEY'),
-    secret: nconf.get('AWS_SECRET'),
-    bucket: bucket
-});
-
-
 
 var cleanUploads = function (photos, done) {
     done();
@@ -105,7 +91,10 @@ var update = function (old) {
                 return;
             }
             //deleting obsolete photos
-            s3Client.deleteFile(photo, function (err, res) {
+            utils.s3().deleteObject({
+                Bucket: bucket,
+                Key: photo
+            }, function (err, res) {
                 if (err) {
                     log.error(err);
                 }
