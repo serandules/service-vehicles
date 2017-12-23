@@ -1,5 +1,6 @@
 var log = require('logger')('service-vehicles:index');
 var nconf = require('nconf');
+var AWS = require('aws-sdk');
 var knox = require('knox');
 var path = require('path');
 var fs = require('fs');
@@ -30,36 +31,25 @@ var s3Client = knox.createClient({
     bucket: bucket
 });
 
+
+
 var cleanUploads = function (photos, done) {
     done();
 };
 
 var upload = function (name, stream, done) {
-    var upload = new MultiPartUpload({
-        client: s3Client,
-        objectName: name,
-        headers: {
-            'Content-Type': 'image/jpeg',
-            'x-amz-acl': 'public-read'
-        },
-        stream: stream
-    });
-    upload.on('initiated', function () {
-        log.debug('mpu initiated');
-    });
-    upload.on('uploading', function () {
-        log.debug('mpu uploading');
-    });
-    upload.on('uploaded', function () {
-        log.debug('mpu uploaded');
-    });
-    upload.on('error', function (err) {
-        log.debug('mpu error');
-        done(err);
-    });
-    upload.on('completed', function (body) {
-        log.debug('mpu complete');
-        done(false, name);
+    utils.s3().upload({
+        Bucket: bucket,
+        Key: name,
+        Body: stream,
+        ACL: 'public-read',
+        ContentType: 'image/jpeg'
+    }, function (err) {
+        if (err) {
+            log.error(err);
+            return done(err);
+        }
+        done(null, name);
     });
 };
 
