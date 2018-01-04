@@ -162,4 +162,47 @@ describe('POST /vehicles', function () {
         });
     });
 
+    it('with valid fields and zero mileage etc.', function (done) {
+        var data = payload();
+        data.mileage = 0;
+        request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'POST',
+            formData: {
+                data: JSON.stringify(data),
+                photos: [
+                    fs.createReadStream(__dirname + '/images/car.jpg'),
+                    fs.createReadStream(__dirname + '/images/car.jpg')
+                ],
+                something: [
+                    fs.createReadStream(__dirname + '/images/car.jpg'),
+                    fs.createReadStream(__dirname + '/images/car.jpg')
+                ]
+            },
+            auth: {
+                bearer: client.users[0].token
+            },
+            json: true
+        }, function (e, r, b) {
+            if (e) {
+                return done(e);
+            }
+            r.statusCode.should.equal(201);
+            should.exist(b);
+            should.exist(b.id);
+            should.exist(b.type);
+            b.type.should.equal('suv');
+            should.exist(b.photos);
+            should.exist(b.photos.length);
+            b.photos.length.should.equal(2);
+            b.photos.forEach(function (id) {
+                should.exist(id);
+                id.should.String();
+            });
+            should.exist(r.headers['location']);
+            r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));
+            done();
+        });
+    });
+
 });
