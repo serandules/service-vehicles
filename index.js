@@ -11,6 +11,7 @@ var utils = require('utils');
 var mongutils = require('mongutils');
 var auth = require('auth');
 var serandi = require('serandi');
+var throttle = require('throttle');
 
 var Vehicles = require('model-vehicles');
 
@@ -156,6 +157,7 @@ module.exports = function (router) {
             '^\/([\/].*|$)'
         ]
     }));
+    router.use(throttle());
     router.use(bodyParser.json());
 
     /**
