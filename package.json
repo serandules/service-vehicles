@@ -23,6 +23,7 @@
     "hub-agent": "serandules/hub-agent#master",
     "errors": "serandules/errors#master",
     "auth": "serandules/auth#master",
+    "throttle": "serandules/throttle#master",
     "serandi": "serandules/serandi#master"
   },
   "devDependencies": {

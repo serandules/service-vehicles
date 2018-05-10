@@ -10,8 +10,8 @@ var errors = require('errors');
 var utils = require('utils');
 var mongutils = require('mongutils');
 var auth = require('auth');
-var serandi = require('serandi');
 var throttle = require('throttle');
+var serandi = require('serandi');
 
 var Vehicles = require('model-vehicles');
 
@@ -157,7 +157,7 @@ module.exports = function (router) {
             '^\/([\/].*|$)'
         ]
     }));
-    router.use(throttle());
+    router.use(throttle({name: 'vehicles'}));
     router.use(bodyParser.json());
 
     /**
