@@ -157,7 +157,7 @@ module.exports = function (router) {
             '^\/([\/].*|$)'
         ]
     }));
-    router.use(throttle({name: 'vehicles'}));
+    router.use(throttle.apis('vehicles'));
     router.use(bodyParser.json());
 
     /**
