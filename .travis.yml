@@ -17,3 +17,4 @@ addons:
       - mongodb-org-server
 services:
   - mongodb
+  - redis-server
