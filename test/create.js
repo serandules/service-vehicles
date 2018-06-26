@@ -121,7 +121,7 @@ describe('POST /vehicles', function () {
         });
     });
 
-    it.only('with valid fields', function (done) {
+    it('with valid fields', function (done) {
         request({
             uri: pot.resolve('autos', '/apis/v/vehicles'),
             method: 'POST',

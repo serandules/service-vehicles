@@ -227,7 +227,7 @@ module.exports = function (router) {
                 log.error(err);
                 return res.pond(errors.serverError());
             }
-            if (!o.result.n) {
+            if (!o.n) {
                 return res.pond(errors.notFound());
             }
             res.status(204).end();
