@@ -20,7 +20,6 @@
     "model-vehicles": "serandules/model-vehicles#master",
     "mongutils": "serandules/mongutils#master",
     "formida": "serandules/formida#master",
-    "hub-agent": "serandules/hub-agent#master",
     "errors": "serandules/errors#master",
     "auth": "serandules/auth#master",
     "throttle": "serandules/throttle#master",
