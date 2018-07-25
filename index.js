@@ -33,7 +33,7 @@ var upload = function (name, stream, done) {
         ContentType: 'image/jpeg'
     }, function (err) {
         if (err) {
-            log.error(err);
+            log.error('s3:upload-errored', err);
             return done(err);
         }
         done(null, name);
@@ -47,7 +47,7 @@ var save800x450 = function (id, stream, done) {
         .crop(sharp.gravity.center)
         .jpeg()
         .on('error', function (err) {
-            log.error(err);
+            log.error('images:crop', 'id:%s', id, err);
             done(err);
         });
     upload(name, fs.createReadStream(stream.path).pipe(transformer), done);
@@ -60,7 +60,7 @@ var save288x162 = function (id, stream, done) {
         .crop(sharp.gravity.center)
         .jpeg()
         .on('error', function (err) {
-            log.error(err);
+            log.error('images:crop', 'id:%s', id, err);
             done(err);
         });
     upload(name, fs.createReadStream(stream.path).pipe(transformer), done);
@@ -68,7 +68,6 @@ var save288x162 = function (id, stream, done) {
 
 var update = function (old) {
     return function (req, res, uploaded) {
-        log.debug('update callback');
         var data = req.body;
         data.photos = data.photos || [];
         uploaded = data.photos.concat(uploaded);
@@ -80,7 +79,7 @@ var update = function (old) {
             _id: id
         }, data, {new: true}, function (err, vehicle) {
             if (err) {
-                log.error(err);
+                log.error('vehicles:find-one-and-update', err);
                 return res.pond(errors.serverError());
             }
             res.locate(vehicle.id).status(200).send(vehicle);
@@ -97,9 +96,8 @@ var update = function (old) {
                 Key: photo
             }, function (err, res) {
                 if (err) {
-                    log.error(err);
+                    log.error('s3:delete-errored', err);
                 }
-                log.debug('file:%s is deleted', photo);
             });
         });
     };
@@ -109,7 +107,7 @@ var create = function (req, res, photos) {
     req.body.photos = photos;
     Vehicles.createIt(req, res, req.body, function (err, vehicle) {
         if (err) {
-            log.error(err);
+            log.error('vehicles:create', err);
             return res.pond(errors.serverError());
         }
         res.locate(vehicle.id).status(201).send(vehicle);
@@ -135,10 +133,10 @@ var process = function (req, res, next) {
         });
     }, function (err) {
         if (err) {
-            log.error(err);
+            log.error('images:process', err);
             cleanUploads(photos, function (err) {
                 if (err) {
-                    log.error(err);
+                    log.error('images:clean', err);
                 }
                 res.pond(errors.serverError());
             });
@@ -173,7 +171,7 @@ module.exports = function (router) {
     router.get('/:id', validators.findOne, sanitizers.findOne, function (req, res) {
         mongutils.findOne(Vehicles, req.query, function (err, vehicle) {
             if (err) {
-                log.error(err);
+                log.error('vehicles:find-one', err);
                 return res.pond(errors.serverError());
             }
             if (!vehicle) {
@@ -189,7 +187,7 @@ module.exports = function (router) {
     router.put('/:id', validators.update, sanitizers.update, function (req, res) {
         Vehicles.findOne(req.query).exec(function (err, vehicle) {
             if (err) {
-                log.error(err);
+                log.error('vehicles:find-one', err);
                 return res.pond(errors.serverError());
             }
             if (!vehicle) {
@@ -205,7 +203,7 @@ module.exports = function (router) {
     router.get('/', validators.find, sanitizers.find, function (req, res) {
         mongutils.find(Vehicles, req.query.data, function (err, vehicles, paging) {
             if (err) {
-                log.error(err);
+                log.error('vehicles:find', err);
                 return res.pond(errors.serverError());
             }
             res.many(vehicles, paging);
@@ -224,7 +222,7 @@ module.exports = function (router) {
             _id: req.params.id
         }, function (err, o) {
             if (err) {
-                log.error(err);
+                log.error('vehicles:remove', err);
                 return res.pond(errors.serverError());
             }
             if (!o.n) {
