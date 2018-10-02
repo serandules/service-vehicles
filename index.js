@@ -105,7 +105,7 @@ var update = function (old) {
 
 var create = function (req, res, photos) {
     req.body.photos = photos;
-    Vehicles.createIt(req, res, req.body, function (err, vehicle) {
+    Vehicles.create(req.body, function (err, vehicle) {
         if (err) {
             log.error('vehicles:create', err);
             return res.pond(errors.serverError());
