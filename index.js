@@ -185,16 +185,7 @@ module.exports = function (router) {
      * /vehicles/51bfd3bd5a51f1722d000001
      */
     router.put('/:id', validators.update, sanitizers.update, function (req, res) {
-        Vehicles.findOne(req.query).exec(function (err, vehicle) {
-            if (err) {
-                log.error('vehicles:find-one', err);
-                return res.pond(errors.serverError());
-            }
-            if (!vehicle) {
-                return res.pond(errors.notFound());
-            }
-            process(req, res, update(vehicle));
-        });
+        process(req, res, update(req.found));
     });
 
     /**
