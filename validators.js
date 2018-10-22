@@ -5,7 +5,7 @@ var errors = require('errors');
 
 exports.create = function (req, res, next) {
     validators.create({
-        content: 'multipart',
+        content: 'json',
         model: Vehicles
     }, req, res, next);
 };
@@ -13,7 +13,7 @@ exports.create = function (req, res, next) {
 exports.update = function (req, res, next) {
     validators.update({
         id: req.params.id,
-        content: 'multipart',
+        content: 'json',
         model: Vehicles
     }, req, res, next);
 };
