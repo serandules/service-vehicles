@@ -8,3 +8,5 @@ nconf.overrides({
     "SERVICE_TOKENS": "master:accounts:/apis/v/tokens",
     "LOCAL_VEHICLES": __dirname + "/..:autos:/apis/v/vehicles"
 });
+
+require('pot');

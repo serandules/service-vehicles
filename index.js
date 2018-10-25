@@ -19,26 +19,20 @@ var Vehicles = require('model-vehicles');
 var validators = require('./validators');
 var sanitizers = require('./sanitizers');
 
-module.exports = function (router) {
+module.exports = function (router, done) {
     router.use(serandi.many);
     router.use(serandi.ctx);
-    router.use(auth({
-        GET: [
-            '^\/$',
-            '^\/([\/].*|$)'
-        ]
-    }));
+    router.use(auth());
     router.use(throttle.apis('vehicles'));
     router.use(bodyParser.json());
 
     /**
      * { "email": "ruchira@serandives.com", "password": "mypassword" }
      */
-    router.post('/', validators.create, sanitizers.create, function (req, res) {
+    router.post('/', validators.create, sanitizers.create, function (req, res, next) {
       Vehicles.create(req.body, function (err, vehicle) {
         if (err) {
-          log.error('vehicles:create', err);
-          return res.pond(errors.serverError());
+          return next(err);
         }
         res.locate(vehicle.id).status(201).send(vehicle);
       });
@@ -47,14 +41,10 @@ module.exports = function (router) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.get('/:id', validators.findOne, sanitizers.findOne, function (req, res) {
+    router.get('/:id', validators.findOne, sanitizers.findOne, function (req, res, next) {
         mongutils.findOne(Vehicles, req.query, function (err, vehicle) {
             if (err) {
-                log.error('vehicles:find-one', err);
-                return res.pond(errors.serverError());
-            }
-            if (!vehicle) {
-                return res.pond(errors.notFound());
+                return next(err);
             }
             res.send(vehicle);
         });
@@ -63,16 +53,10 @@ module.exports = function (router) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.put('/:id', validators.update, sanitizers.update, function (req, res) {
-      var id = req.params.id;
-      var data = req.body;
-      Vehicles.findOneAndUpdate({
-        user: req.user.id,
-        _id: id
-      }, data, {new: true}, function (err, vehicle) {
+    router.put('/:id', validators.update, sanitizers.update, function (req, res, next) {
+      mongutils.update(Vehicles, req.query, req.body, function (err, vehicle) {
         if (err) {
-          log.error('vehicles:find-one-and-update', err);
-          return res.pond(errors.serverError());
+          return next(err);
         }
         res.locate(vehicle.id).status(200).send(vehicle);
       });
@@ -81,11 +65,10 @@ module.exports = function (router) {
     /**
      * /vehicles?data={}
      */
-    router.get('/', validators.find, sanitizers.find, function (req, res) {
+    router.get('/', validators.find, sanitizers.find, function (req, res, next) {
         mongutils.find(Vehicles, req.query.data, function (err, vehicles, paging) {
             if (err) {
-                log.error('vehicles:find', err);
-                return res.pond(errors.serverError());
+                return next(err);
             }
             res.many(vehicles, paging);
         });
@@ -94,22 +77,14 @@ module.exports = function (router) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.delete('/:id', function (req, res) {
-        if (!mongutils.objectId(req.params.id)) {
-            return res.pond(errors.notFound());
+    router.delete('/:id', validators.findOne, sanitizers.findOne, function (req, res, next) {
+      mongutils.remove(Vehicles, req.query, function (err) {
+        if (err) {
+          return next(err);
         }
-        Vehicles.remove({
-            user: req.user.id,
-            _id: req.params.id
-        }, function (err, o) {
-            if (err) {
-                log.error('vehicles:remove', err);
-                return res.pond(errors.serverError());
-            }
-            if (!o.n) {
-                return res.pond(errors.notFound());
-            }
-            res.status(204).end();
-        });
+        res.status(204).end();
+      });
     });
+
+    done();
 };
