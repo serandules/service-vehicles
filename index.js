@@ -22,7 +22,12 @@ var sanitizers = require('./sanitizers');
 module.exports = function (router, done) {
     router.use(serandi.many);
     router.use(serandi.ctx);
-    router.use(auth());
+    router.use(auth({
+      GET: [
+        '^\/$',
+        '^\/.*'
+      ]
+    }));
     router.use(throttle.apis('vehicles'));
     router.use(bodyParser.json());
 
