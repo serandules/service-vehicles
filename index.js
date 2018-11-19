@@ -1,14 +1,5 @@
 var log = require('logger')('service-vehicles:index');
-var fs = require('fs');
-var uuid = require('node-uuid');
-var async = require('async');
-var temp = require('temp');
-var sharp = require('sharp');
-var express = require('express');
 var bodyParser = require('body-parser');
-
-var errors = require('errors');
-var utils = require('utils');
 var mongutils = require('mongutils');
 var auth = require('auth');
 var throttle = require('throttle');
