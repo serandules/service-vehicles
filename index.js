@@ -1,14 +1,11 @@
 var log = require('logger')('service-vehicles:index');
 var bodyParser = require('body-parser');
-var mongutils = require('mongutils');
+
 var auth = require('auth');
 var throttle = require('throttle');
 var serandi = require('serandi');
-
+var model = require('model');
 var Vehicles = require('model-vehicles');
-
-var validators = require('./validators');
-var sanitizers = require('./sanitizers');
 
 module.exports = function (router, done) {
     router.use(serandi.many);
@@ -25,8 +22,11 @@ module.exports = function (router, done) {
     /**
      * { "email": "ruchira@serandives.com", "password": "mypassword" }
      */
-    router.post('/', validators.create, sanitizers.create, function (req, res, next) {
-      Vehicles.create(req.body, function (err, vehicle) {
+    router.post('/',
+      serandi.json,
+      serandi.create(Vehicles),
+      function (req, res, next) {
+      model.create(req.ctx, function (err, vehicle) {
         if (err) {
           return next(err);
         }
@@ -37,8 +37,10 @@ module.exports = function (router, done) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.get('/:id', validators.findOne, sanitizers.findOne, function (req, res, next) {
-        mongutils.findOne(Vehicles, req.query, function (err, vehicle) {
+    router.get('/:id',
+      serandi.findOne(Vehicles),
+      function (req, res, next) {
+        model.findOne(req.ctx, function (err, vehicle) {
             if (err) {
                 return next(err);
             }
@@ -49,8 +51,10 @@ module.exports = function (router, done) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.put('/:id', validators.update, sanitizers.update, function (req, res, next) {
-      mongutils.update(Vehicles, req.query, req.body, function (err, vehicle) {
+    router.put('/:id', serandi.json,
+      serandi.update(Vehicles),
+      function (req, res, next) {
+        model.update(req.ctx, function (err, vehicle) {
         if (err) {
           return next(err);
         }
@@ -61,8 +65,10 @@ module.exports = function (router, done) {
     /**
      * /vehicles?data={}
      */
-    router.get('/', validators.find, sanitizers.find, function (req, res, next) {
-        mongutils.find(Vehicles, req.query.data, function (err, vehicles, paging) {
+    router.get('/',
+      serandi.find(Vehicles),
+      function (req, res, next) {
+        model.find(req.ctx, function (err, vehicles, paging) {
             if (err) {
                 return next(err);
             }
@@ -73,8 +79,10 @@ module.exports = function (router, done) {
     /**
      * /vehicles/51bfd3bd5a51f1722d000001
      */
-    router.delete('/:id', validators.findOne, sanitizers.findOne, function (req, res, next) {
-      mongutils.remove(Vehicles, req.query, function (err) {
+    router.delete('/:id',
+      serandi.remove(Vehicles),
+      function (req, res, next) {
+        model.remove(req.ctx, function (err) {
         if (err) {
           return next(err);
         }
