@@ -246,6 +246,7 @@ describe('GET /vehicles/:id', function () {
             group: groups.public.id,
             actions: ['read']
           });
+          vehicle.visibility['*'].groups.push(groups.public.id);
           request({
             uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
             method: 'PUT',

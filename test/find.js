@@ -803,6 +803,7 @@ describe('GET /vehicles', function () {
             group: groups.public.id,
             actions: ['read']
           });
+          v.visibility['*'].groups.push(groups.public.id);
           request({
             uri: pot.resolve('autos', '/apis/v/vehicles/' + v.id),
             method: 'PUT',
