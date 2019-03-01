@@ -84,33 +84,92 @@ describe('POST /vehicles', function () {
     });
   });
 
-  var fields = [
-    'location',
-    'contacts',
-    'type',
-    'make',
-    'model',
-    'manufacturedAt',
-    'fuel',
-    'transmission',
-    'doors',
-    'steering',
-    'seats',
-    'driveType',
-    'mileage',
-    'condition',
-    'engine',
-    'color',
-    'price',
-    'currency'
-  ];
+  var fields = {
+    location: {
+      invalid: 'dummy'
+    },
+    contacts: {
+      invalid: 'dummy'
+    },
+    type: {
+      invalid: 'dummy'
+    },
+    make: {
+      invalid: 'dummy'
+    },
+    model: {
+      invalid: 'dummy'
+    },
+    manufacturedAt: {
+      invalid: 'dummy'
+    },
+    fuel: {
+      invalid: 'dummy'
+    },
+    transmission: {
+      invalid: 'dummy'
+    },
+    doors: {
+      invalid: 'dummy'
+    },
+    steering: {
+      invalid: 'dummy'
+    },
+    seats: {
+      invalid: 'dummy'
+    },
+    driveType: {
+      invalid: 'dummy'
+    },
+    mileage: {
+      invalid: 'dummy'
+    },
+    condition: {
+      invalid: 'dummy'
+    },
+    engine: {
+      invalid: 'dummy'
+    },
+    color: {
+      invalid: 'dummy'
+    },
+    price: {
+      invalid: 'dummy'
+    },
+    currency: {
+      invalid: 'dummy'
+    }
+  };
 
-  fields.forEach(function (field) {
+  Object.keys(fields).forEach(function (field) {
     it('without ' + field, function (done) {
       request({
         uri: pot.resolve('autos', '/apis/v/vehicles'),
         method: 'POST',
         json: payload([field]),
+        auth: {
+          bearer: client.users[0].token
+        }
+      }, function (e, r, b) {
+        if (e) {
+          return done(e);
+        }
+        r.statusCode.should.equal(errors.unprocessableEntity().status);
+        should.exist(b);
+        should.exist(b.code);
+        should.exist(b.message);
+        b.code.should.equal(errors.unprocessableEntity().data.code);
+        done();
+      });
+    });
+
+    it('invalid ' + field, function (done) {
+      var o = payload([field]);
+      o[field] = fields[field].invalid;
+      request({
+        uri: pot.resolve('autos', '/apis/v/vehicles'),
+        method: 'POST',
+        json: o,
         auth: {
           bearer: client.users[0].token
         }

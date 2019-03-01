@@ -1,7 +1,12 @@
 {
   "location": "59417b1220873e577df88aa2",
   "contacts": {
-    "email": "user@serandives.com"
+    "email": "user@serandives.com",
+    "phones": ["+94775000000"],
+    "messenger": "serandives",
+    "skype": "serandives",
+    "viber": "+94775000000",
+    "whatsapp": "+94775000000"
   },
   "type": "suv",
   "make": "59417b1220873e577df88aa2",
@@ -16,7 +21,7 @@
   "mileage": 20000,
   "condition": "used",
   "engine": 1500,
-  "color": "wine-red",
+  "color": "black",
   "description": "",
   "price": 6000000,
   "currency": "LKR",
