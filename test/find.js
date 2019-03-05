@@ -542,7 +542,7 @@ describe('GET /vehicles', function () {
       qs: {
         data: JSON.stringify({
           query: {
-            contacts: 'contacts'
+            contact: 'contact'
           }
         })
       },

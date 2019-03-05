@@ -88,7 +88,7 @@ describe('POST /vehicles', function () {
     location: {
       invalid: 'dummy'
     },
-    contacts: {
+    contact: {
       invalid: 'dummy'
     },
     type: {

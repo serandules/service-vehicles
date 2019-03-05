@@ -122,7 +122,7 @@ describe('PUT /vehicles/:id', function () {
 
   var fields = [
     'location',
-    'contacts',
+    'contact',
     'type',
     'make',
     'model',
