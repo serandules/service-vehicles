@@ -721,6 +721,86 @@ describe('GET /vehicles', function () {
     });
   });
 
+  it('by user0 by user0 permissions', function (done) {
+    request({
+      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      method: 'GET',
+      auth: {
+        bearer: client.users[0].token
+      },
+      qs: {
+        data: JSON.stringify({
+          count: 20,
+          query: {
+            permissions: {
+              $or: [{
+                user: client.users[0].profile.id,
+                actions: {
+                  $in: ['update']
+                }
+              }]
+            }
+          }
+        })
+      },
+      json: true
+    }, function (e, r, b) {
+      if (e) {
+        return done(e);
+      }
+      r.statusCode.should.equal(200);
+      should.exist(b);
+      should.exist(b.length);
+      b.length.should.equal(20);
+      validateVehicles(b);
+      b.forEach(function (v) {
+        v.user.should.equal(client.users[0].profile.id);
+      });
+      findFirstPages(r);
+      done();
+    });
+  });
+
+  it('by user0 by public permissions', function (done) {
+    request({
+      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      method: 'GET',
+      auth: {
+        bearer: client.users[0].token
+      },
+      qs: {
+        data: JSON.stringify({
+          count: 20,
+          query: {
+            permissions: {
+              $nor: [{
+                group: groups.public.id,
+                actions: {
+                  $in: ['read']
+                }
+              }]
+            }
+          }
+        })
+      },
+      json: true
+    }, function (e, r, b) {
+      if (e) {
+        return done(e);
+      }
+      r.statusCode.should.equal(200);
+      should.exist(b);
+      should.exist(b.length);
+      b.length.should.equal(20);
+      validateVehicles(b);
+      b.forEach(function (v) {
+        v.user.should.equal(client.users[0].profile.id);
+      });
+      findFirstPages(r);
+      done();
+    });
+  });
+
   it('by user1', function (done) {
     request({
       uri: pot.resolve('autos', '/apis/v/vehicles'),
