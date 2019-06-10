@@ -276,4 +276,27 @@ describe('PUT /vehicles/:id', function () {
       done();
     });
   });
+
+  it('by an authorized user', function (done) {
+    var v0 = _.cloneDeep(vehicle);
+    request({
+      uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+      method: 'PUT',
+      auth: {
+        bearer: client.admin.token
+      },
+      json: v0
+    }, function (e, r, b) {
+      if (e) {
+        return done(e);
+      }
+      r.statusCode.should.equal(200);
+      should.exist(b);
+      should.exist(b.id);
+      should.exist(b.user);
+      b.id.should.equal(vehicle.id);
+      b.user.should.equal(vehicle.user);
+      done();
+    });
+  });
 });
