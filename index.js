@@ -19,9 +19,6 @@ module.exports = function (router, done) {
     router.use(throttle.apis('vehicles'));
     router.use(bodyParser.json());
 
-    /**
-     * { "email": "ruchira@serandives.com", "password": "mypassword" }
-     */
     router.post('/',
       serandi.json,
       serandi.create(Vehicles),
@@ -34,9 +31,13 @@ module.exports = function (router, done) {
       });
     });
 
-    /**
-     * /vehicles/51bfd3bd5a51f1722d000001
-     */
+    router.post('/:id',
+      serandi.json,
+      serandi.transit({
+        workflow: 'model',
+        model: Vehicles
+    }));
+
     router.get('/:id',
       serandi.findOne(Vehicles),
       function (req, res, next) {
@@ -48,10 +49,8 @@ module.exports = function (router, done) {
         });
     });
 
-    /**
-     * /vehicles/51bfd3bd5a51f1722d000001
-     */
-    router.put('/:id', serandi.json,
+    router.put('/:id',
+      serandi.json,
       serandi.update(Vehicles),
       function (req, res, next) {
         model.update(req.ctx, function (err, vehicle) {
@@ -62,9 +61,6 @@ module.exports = function (router, done) {
       });
     });
 
-    /**
-     * /vehicles?data={}
-     */
     router.get('/',
       serandi.find(Vehicles),
       function (req, res, next) {
@@ -76,9 +72,6 @@ module.exports = function (router, done) {
         });
     });
 
-    /**
-     * /vehicles/51bfd3bd5a51f1722d000001
-     */
     router.delete('/:id',
       serandi.remove(Vehicles),
       function (req, res, next) {

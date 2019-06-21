@@ -191,7 +191,6 @@ describe('GET /vehicles/:id', function () {
     });
   });
 
-
   it('can be accessed by anyone when public', function (done) {
     request({
       uri: pot.resolve('autos', '/apis/v/vehicles'),
@@ -242,25 +241,10 @@ describe('GET /vehicles/:id', function () {
           should.exist(b.code);
           should.exist(b.message);
           b.code.should.equal(errors.notFound().data.code);
-          vehicle.permissions.push({
-            group: groups.public.id,
-            actions: ['read']
-          });
-          vehicle.visibility['*'].groups.push(groups.public.id);
-          request({
-            uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
-            method: 'PUT',
-            auth: {
-              bearer: client.users[0].token
-            },
-            json: vehicle
-          }, function (e, r, b) {
-            if (e) {
-              return done(e);
+          pot.publish('autos', 'vehicles', vehicle.id, client.users[0].token, client.admin.token, function (err) {
+            if (err) {
+              return done(err);
             }
-            r.statusCode.should.equal(200);
-            should.exist(b);
-            validateVehicles([b]);
             request({
               uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
               method: 'GET',

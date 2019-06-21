@@ -879,25 +879,7 @@ describe('GET /vehicles', function () {
         async.each(b, function (v, ran) {
           should.exist(v.user);
           v.user.should.equal(client.users[2].profile.id);
-          v.permissions.push({
-            group: groups.public.id,
-            actions: ['read']
-          });
-          v.visibility['*'].groups.push(groups.public.id);
-          request({
-            uri: pot.resolve('autos', '/apis/v/vehicles/' + v.id),
-            method: 'PUT',
-            auth: {
-              bearer: client.users[2].token
-            },
-            json: v
-          }, function (e, r, b) {
-            if (e) {
-              return ran(e);
-            }
-            r.statusCode.should.equal(200);
-            ran();
-          });
+          pot.publish('autos', 'vehicles', v.id, client.users[2].token, client.admin.token, ran);
         }, function (err) {
           if (err) {
             return done(err);
