@@ -31,11 +31,11 @@ describe('GET /vehicles', function () {
             return done(err);
           }
           image = id;
-          createVehicles(client.users[0], 100, function (err) {
+          createVehicles(client.users[0], 1, function (err) {
             if (err) {
               return done(err);
             }
-            createVehicles(client.users[1], 100, done);
+            createVehicles(client.users[1], 1, done);
           });
         });
       });
@@ -949,6 +949,70 @@ describe('GET /vehicles', function () {
               user2.should.equal(100);
               done();
             });
+          });
+        });
+      });
+    });
+  });
+
+  it('by status', function (done) {
+    var count = 2;
+    createVehicles(client.users[3], count, function (err) {
+      if (err) {
+        return done(err);
+      }
+      request({
+        uri: pot.resolve('autos', '/apis/v/vehicles'),
+        method: 'GET',
+        auth: {
+          bearer: client.users[3].token
+        },
+        qs: {
+          data: JSON.stringify({
+            count: 100
+          })
+        },
+        json: true
+      }, function (e, r, b) {
+        if (e) {
+          return done(e);
+        }
+        r.statusCode.should.equal(200);
+        should.exist(b);
+        should.exist(b.length);
+        b.length.should.equal(count);
+        async.each(b, function (v, ran) {
+          should.exist(v.user);
+          v.user.should.equal(client.users[3].profile.id);
+          pot.transit('autos', 'vehicles', v.id, client.users[3].token, 'review', ran);
+        }, function (err) {
+          if (err) {
+            return done(err);
+          }
+          request({
+            uri: pot.resolve('autos', '/apis/v/vehicles'),
+            method: 'GET',
+            auth: {
+              bearer: client.admin.token
+            },
+            qs: {
+              data: JSON.stringify({
+                query: {
+                  status: 'reviewing'
+                },
+                count: 100
+              })
+            },
+            json: true
+          }, function (e, r, b) {
+            if (e) {
+              return done(e);
+            }
+            r.statusCode.should.equal(200);
+            should.exist(b);
+            should.exist(b.length);
+            b.length.should.equal(count);
+            done();
           });
         });
       });
