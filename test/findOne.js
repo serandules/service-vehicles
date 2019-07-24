@@ -8,12 +8,15 @@ var request = require('request');
 var pot = require('pot');
 var vehicles = require('./vehicles');
 
+var utils = require('./utils');
+
 var vehicle = require('./vehicle.json');
 
 describe('GET /vehicles/:id', function () {
   var client;
   var groups;
   var image;
+  var location;
   before(function (done) {
     pot.drop('vehicles', function (err) {
       if (err) {
@@ -29,16 +32,22 @@ describe('GET /vehicles/:id', function () {
             return done(err);
           }
           groups = g;
-          vehicles.image(client.users[0].token, function (err, id) {
+          utils.location(client.users[0].token, function (err, loc) {
             if (err) {
               return done(err);
             }
-            image = id;
-            createVehicles(client.users[0], 1, function (err) {
+            location = loc;
+            vehicles.image(client.users[0].token, function (err, id) {
               if (err) {
                 return done(err);
               }
-              createVehicles(client.users[1], 1, done);
+              image = id;
+              createVehicles(client.users[0], 1, function (err) {
+                if (err) {
+                  return done(err);
+                }
+                createVehicles(client.users[1], 1, done);
+              });
             });
           });
         });
@@ -62,6 +71,7 @@ describe('GET /vehicles/:id', function () {
     }, function (created) {
       var vehicle = payload();
       vehicle.price = 1000 * (count + 1);
+      vehicle.location = location.id;
       request({
         uri: pot.resolve('autos', '/apis/v/vehicles'),
         method: 'POST',
@@ -273,7 +283,102 @@ describe('GET /vehicles/:id', function () {
                 r.statusCode.should.equal(200);
                 should.exist(b);
                 validateVehicles([b]);
-                done();
+                request({
+                  uri: pot.resolve('autos', '/apis/v/vehicles'),
+                  method: 'GET',
+                  auth: {
+                    bearer: client.users[2].token
+                  },
+                  qs: {
+                    data: JSON.stringify({
+                      count: 20,
+                      query: {
+                        tags: {
+                          $province: 'something'
+                        }
+                      }
+                    })
+                  },
+                  json: true
+                }, function (e, r, b) {
+                  r.statusCode.should.equal(errors.unprocessableEntity().status);
+                  should.exist(b);
+                  should.exist(b.code);
+                  should.exist(b.message);
+                  b.code.should.equal(errors.unprocessableEntity().data.code);
+                  request({
+                    uri: pot.resolve('autos', '/apis/v/vehicles'),
+                    method: 'GET',
+                    auth: {
+                      bearer: client.users[2].token
+                    },
+                    qs: {
+                      data: JSON.stringify({
+                        count: 20,
+                        query: {
+                          tags: {
+                            province: 'something'
+                          }
+                        }
+                      })
+                    },
+                    json: true
+                  }, function (e, r, b) {
+                    r.statusCode.should.equal(errors.unprocessableEntity().status);
+                    should.exist(b);
+                    should.exist(b.code);
+                    should.exist(b.message);
+                    b.code.should.equal(errors.unprocessableEntity().data.code);
+                    request({
+                      uri: pot.resolve('autos', '/apis/v/vehicles'),
+                      method: 'GET',
+                      auth: {
+                        bearer: client.users[2].token
+                      },
+                      qs: {
+                        data: JSON.stringify({
+                          count: 20,
+                          query: {
+                            tags: [{
+                              $province: 'something'
+                            }]
+                          }
+                        })
+                      },
+                      json: true
+                    }, function (e, r, b) {
+                      r.statusCode.should.equal(errors.unprocessableEntity().status);
+                      should.exist(b);
+                      should.exist(b.code);
+                      should.exist(b.message);
+                      b.code.should.equal(errors.unprocessableEntity().data.code);
+                      request({
+                        uri: pot.resolve('autos', '/apis/v/vehicles'),
+                        method: 'GET',
+                        auth: {
+                          bearer: client.users[2].token
+                        },
+                        qs: {
+                          data: JSON.stringify({
+                            count: 20,
+                            query: {
+                              tags: [{
+                                name: 'location:postal',
+                                value: '00700'
+                              }]
+                            }
+                          })
+                        },
+                        json: true
+                      }, function (e, r, b) {
+                        r.statusCode.should.equal(200);
+                        should.exist(b);
+                        b.length.should.equal(1);
+                        done();
+                      });
+                    });
+                  });
+                });
               });
             });
           });

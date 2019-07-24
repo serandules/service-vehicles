@@ -31,11 +31,11 @@ describe('GET /vehicles', function () {
             return done(err);
           }
           image = id;
-          createVehicles(client.users[0], 1, function (err) {
+          createVehicles(client.users[0], 100, function (err) {
             if (err) {
               return done(err);
             }
-            createVehicles(client.users[1], 1, done);
+            createVehicles(client.users[1], 100, done);
           });
         });
       });
@@ -969,7 +969,10 @@ describe('GET /vehicles', function () {
         },
         qs: {
           data: JSON.stringify({
-            count: 100
+            count: 100,
+            query: {
+              user: client.users[3].profile.id
+            }
           })
         },
         json: true
