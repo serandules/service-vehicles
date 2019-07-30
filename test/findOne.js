@@ -374,7 +374,33 @@ describe('GET /vehicles/:id', function () {
                         r.statusCode.should.equal(200);
                         should.exist(b);
                         b.length.should.equal(1);
-                        done();
+                        request({
+                          uri: pot.resolve('autos', '/apis/v/vehicles'),
+                          method: 'GET',
+                          auth: {
+                            bearer: client.users[2].token
+                          },
+                          qs: {
+                            data: JSON.stringify({
+                              count: 20,
+                              query: {
+                                tags: [{
+                                  name: 'location:postal',
+                                  value: '00700'
+                                }, {
+                                  name: 'location:district',
+                                  value: 'Colombo'
+                                }]
+                              }
+                            })
+                          },
+                          json: true
+                        }, function (e, r, b) {
+                          r.statusCode.should.equal(200);
+                          should.exist(b);
+                          b.length.should.equal(1);
+                          done();
+                        });
                       });
                     });
                   });
