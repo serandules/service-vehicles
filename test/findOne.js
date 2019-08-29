@@ -363,7 +363,7 @@ describe('GET /vehicles/:id', function () {
                             count: 20,
                             query: {
                               tags: [{
-                                name: 'location:postal',
+                                name: 'location:locations:postal',
                                 value: '00700'
                               }]
                             }
@@ -385,10 +385,10 @@ describe('GET /vehicles/:id', function () {
                               count: 20,
                               query: {
                                 tags: [{
-                                  name: 'location:postal',
+                                  name: 'location:locations:postal',
                                   value: '00700'
                                 }, {
-                                  name: 'location:district',
+                                  name: 'location:locations:district',
                                   value: 'Colombo'
                                 }]
                               }
