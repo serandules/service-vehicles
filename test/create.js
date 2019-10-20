@@ -109,25 +109,10 @@ describe('POST /vehicles', function () {
     transmission: {
       invalid: 'dummy'
     },
-    doors: {
-      invalid: 'dummy'
-    },
-    steering: {
-      invalid: 'dummy'
-    },
-    seats: {
-      invalid: 'dummy'
-    },
-    driveType: {
-      invalid: 'dummy'
-    },
     mileage: {
       invalid: 'dummy'
     },
     condition: {
-      invalid: 'dummy'
-    },
-    engine: {
       invalid: 'dummy'
     },
     color: {

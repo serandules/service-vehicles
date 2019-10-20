@@ -129,13 +129,8 @@ describe('PUT /vehicles/:id', function () {
     'manufacturedAt',
     'fuel',
     'transmission',
-    'doors',
-    'steering',
-    'seats',
-    'driveType',
     'mileage',
     'condition',
-    'engine',
     'color',
     'price',
     'currency'
