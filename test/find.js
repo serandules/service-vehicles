@@ -124,7 +124,7 @@ describe('GET /vehicles', function () {
       should.exist(vehicle.id);
       should.exist(vehicle.user);
       should.exist(vehicle.createdAt);
-      should.exist(vehicle.updatedAt);
+      should.exist(vehicle.modifiedAt);
       should.not.exist(vehicle._id);
       should.not.exist(vehicle.__v);
     });
@@ -244,7 +244,7 @@ describe('GET /vehicles', function () {
     });
   });
 
-  it('by price and createdAt ascending paging', function (done) {
+  it('by price and updatedAt ascending paging', function (done) {
     request({
       uri: pot.resolve('autos', '/apis/v/vehicles'),
       method: 'GET',
@@ -255,11 +255,12 @@ describe('GET /vehicles', function () {
         data: JSON.stringify({
           sort: {
             price: -1,
-            createdAt: -1
+            updatedAt: -1
           },
           fields: {
             createdAt: 1,
             updatedAt: 1,
+            modifiedAt: 1,
             price: 1,
             user: 1
           },
@@ -331,7 +332,7 @@ describe('GET /vehicles', function () {
     });
   });
 
-  it('by price and createdAt descending paging', function (done) {
+  it('by price and updatedAt descending paging', function (done) {
     request({
       uri: pot.resolve('autos', '/apis/v/vehicles'),
       method: 'GET',
@@ -342,11 +343,12 @@ describe('GET /vehicles', function () {
         data: JSON.stringify({
           sort: {
             price: 1,
-            createdAt: -1
+            updatedAt: -1
           },
           fields: {
             createdAt: 1,
             updatedAt: 1,
+            modifiedAt: 1,
             price: 1,
             user: 1
           },

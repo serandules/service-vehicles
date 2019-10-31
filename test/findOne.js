@@ -100,7 +100,7 @@ describe('GET /vehicles/:id', function () {
       should.exist(vehicle.id);
       should.exist(vehicle.user);
       should.exist(vehicle.createdAt);
-      should.exist(vehicle.updatedAt);
+      should.exist(vehicle.modifiedAt);
       should.not.exist(vehicle._id);
       should.not.exist(vehicle.__v);
     });
