@@ -7,6 +7,12 @@ var serandi = require('serandi');
 var model = require('model');
 var Vehicles = require('model-vehicles');
 
+var xactions = {
+  post: {
+    bumpup: require('./xactions/bumpup')
+  }
+};
+
 module.exports = function (router, done) {
     router.use(serandi.many);
     router.use(serandi.ctx);
@@ -32,6 +38,7 @@ module.exports = function (router, done) {
     });
 
     router.post('/:id',
+      serandi.xactions(xactions.post),
       serandi.json,
       serandi.transit({
         workflow: 'model',
