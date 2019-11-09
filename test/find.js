@@ -84,11 +84,11 @@ describe('GET /vehicles', function () {
   var findPages = function (r) {
     should.exist(r.headers.link);
     var pages = links(r.headers.link);
-    should.exist(pages.last);
-    should.exist(pages.last.rel);
-    pages.last.rel.should.equal('last');
-    should.exist(pages.last.data);
-    should.exist(pages.last.url);
+    should.exist(pages.prev);
+    should.exist(pages.prev.rel);
+    pages.prev.rel.should.equal('prev');
+    should.exist(pages.prev.data);
+    should.exist(pages.prev.url);
     should.exist(pages.next);
     should.exist(pages.next.rel);
     pages.next.rel.should.equal('next');
@@ -111,11 +111,11 @@ describe('GET /vehicles', function () {
   var findLastPages = function (r) {
     should.exist(r.headers.link);
     var pages = links(r.headers.link);
-    should.exist(pages.last);
-    should.exist(pages.last.rel);
-    pages.last.rel.should.equal('last');
-    should.exist(pages.last.data);
-    should.exist(pages.last.url);
+    should.exist(pages.prev);
+    should.exist(pages.prev.rel);
+    pages.prev.rel.should.equal('prev');
+    should.exist(pages.prev.data);
+    should.exist(pages.prev.url);
     return pages;
   };
 
@@ -312,7 +312,7 @@ describe('GET /vehicles', function () {
         });
         var secondPages = findPages(r);
         request({
-          uri: secondPages.last.url,
+          uri: secondPages.prev.url,
           method: 'GET',
           auth: {
             bearer: client.users[0].token
@@ -400,7 +400,7 @@ describe('GET /vehicles', function () {
         });
         var secondPages = findPages(r);
         request({
-          uri: secondPages.last.url,
+          uri: secondPages.prev.url,
           method: 'GET',
           auth: {
             bearer: client.users[0].token
