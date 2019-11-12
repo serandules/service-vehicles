@@ -33,7 +33,7 @@ var createVehicles = function (count, image, done) {
 
 var image = function (token, done) {
   request({
-    uri: 'http://development.accounts.serandives.com:4000/apis/v/binaries',
+    uri: 'http://development.www.serandives.com:4000/apis/v/binaries',
     method: 'POST',
     formData: {
       data: JSON.stringify({
