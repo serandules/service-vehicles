@@ -9,7 +9,7 @@ var Vehicles = require('model-vehicles');
 
 var xactions = {
   post: {
-    bumpup: require('./xactions/bumpup')
+    bumpup: serandi.bumpup(Vehicles)
   }
 };
 

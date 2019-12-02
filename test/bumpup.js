@@ -156,10 +156,7 @@ describe('POST /vehicles/:id (bumpup)', function () {
         should.exist(b.user);
         b.id.should.equal(vehicle.id);
         b.user.should.equal(vehicle.user);
-        console.log(new Date())
-        console.log(b.updatedAt)
         var diff = new Date() - new Date(b.updatedAt);
-        console.log(diff)
         diff.should.be.below(2000);
         done();
       });
