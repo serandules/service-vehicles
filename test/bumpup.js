@@ -11,7 +11,7 @@ var BUMP_UP_THRESHOLD = 14 * 24 * 60 * 60 * 1000;
 
 var data = require('./vehicle.json');
 
-describe.only('POST /vehicles/:id (bumpup)', function () {
+describe('POST /vehicles/:id (bumpup)', function () {
   var client;
   var vehicle;
   var image;
