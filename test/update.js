@@ -47,7 +47,7 @@ describe('PUT /vehicles/:id', function () {
 
   var create = function (user, done) {
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      uri: pot.resolve('apis', '/v/vehicles'),
       method: 'POST',
       auth: {
         bearer: user.token
@@ -70,14 +70,14 @@ describe('PUT /vehicles/:id', function () {
         id.should.String();
       });
       should.exist(r.headers['location']);
-      r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));
+      r.headers['location'].should.equal(pot.resolve('apis', '/v/vehicles/' + b.id));
       done(null, b);
     });
   };
 
   it('with no media type', function (done) {
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+      uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
       method: 'PUT',
       auth: {
         bearer: client.users[0].token
@@ -98,7 +98,7 @@ describe('PUT /vehicles/:id', function () {
 
   it('with unsupported media type', function (done) {
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+      uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
       method: 'PUT',
       headers: {
         'Content-Type': 'application/xml'
@@ -139,7 +139,7 @@ describe('PUT /vehicles/:id', function () {
   fields.forEach(function (field) {
     it('without ' + field, function (done) {
       request({
-        uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+        uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
         method: 'PUT',
         json: payload([field]),
         auth: {
@@ -164,7 +164,7 @@ describe('PUT /vehicles/:id', function () {
     v0.images.push(image);
     v0.images.push(image);
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+      uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
       method: 'PUT',
       auth: {
         bearer: client.users[0].token
@@ -193,10 +193,10 @@ describe('PUT /vehicles/:id', function () {
         v1.images.indexOf(id).should.not.equal(-1);
       });
       should.exist(r.headers['location']);
-      r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + v1.id));
+      r.headers['location'].should.equal(pot.resolve('apis', '/v/vehicles/' + v1.id));
       v1.images = [image, image];
       request({
-        uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+        uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
         method: 'PUT',
         auth: {
           bearer: client.users[0].token
@@ -222,7 +222,7 @@ describe('PUT /vehicles/:id', function () {
           id.should.String();
         });
         should.exist(r.headers['location']);
-        r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + v2.id));
+        r.headers['location'].should.equal(pot.resolve('apis', '/v/vehicles/' + v2.id));
         done();
       });
     });
@@ -231,7 +231,7 @@ describe('PUT /vehicles/:id', function () {
   it('by unauthorized user', function (done) {
     var v0 = _.cloneDeep(vehicle);
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+      uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
       method: 'PUT',
       auth: {
         bearer: client.users[1].token
@@ -253,7 +253,7 @@ describe('PUT /vehicles/:id', function () {
   it('invalid id', function (done) {
     var v0 = _.cloneDeep(vehicle);
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles/invalid'),
+      uri: pot.resolve('apis', '/v/vehicles/invalid'),
       method: 'PUT',
       auth: {
         bearer: client.users[1].token
@@ -275,7 +275,7 @@ describe('PUT /vehicles/:id', function () {
   it('by an authorized user', function (done) {
     var v0 = _.cloneDeep(vehicle);
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles/' + vehicle.id),
+      uri: pot.resolve('apis', '/v/vehicles/' + vehicle.id),
       method: 'PUT',
       auth: {
         bearer: client.admin.token

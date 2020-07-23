@@ -41,7 +41,7 @@ describe('POST /vehicles', function () {
 
   it('with no media type', function (done) {
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      uri: pot.resolve('apis', '/v/vehicles'),
       method: 'POST',
       auth: {
         bearer: client.users[0].token
@@ -62,7 +62,7 @@ describe('POST /vehicles', function () {
 
   it('with unsupported media type', function (done) {
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      uri: pot.resolve('apis', '/v/vehicles'),
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml'
@@ -129,7 +129,7 @@ describe('POST /vehicles', function () {
   Object.keys(fields).forEach(function (field) {
     it('without ' + field, function (done) {
       request({
-        uri: pot.resolve('autos', '/apis/v/vehicles'),
+        uri: pot.resolve('apis', '/v/vehicles'),
         method: 'POST',
         json: payload([field]),
         auth: {
@@ -152,7 +152,7 @@ describe('POST /vehicles', function () {
       var o = payload([field]);
       o[field] = fields[field].invalid;
       request({
-        uri: pot.resolve('autos', '/apis/v/vehicles'),
+        uri: pot.resolve('apis', '/v/vehicles'),
         method: 'POST',
         json: o,
         auth: {
@@ -174,7 +174,7 @@ describe('POST /vehicles', function () {
 
   it('with valid fields', function (done) {
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      uri: pot.resolve('apis', '/v/vehicles'),
       method: 'POST',
       auth: {
         bearer: client.users[0].token
@@ -197,7 +197,7 @@ describe('POST /vehicles', function () {
         id.should.String();
       });
       should.exist(r.headers['location']);
-      r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));
+      r.headers['location'].should.equal(pot.resolve('apis', '/v/vehicles/' + b.id));
       done();
     });
   });
@@ -206,7 +206,7 @@ describe('POST /vehicles', function () {
     var data = payload();
     data.mileage = 0;
     request({
-      uri: pot.resolve('autos', '/apis/v/vehicles'),
+      uri: pot.resolve('apis', '/v/vehicles'),
       method: 'POST',
       auth: {
         bearer: client.users[0].token
@@ -229,7 +229,7 @@ describe('POST /vehicles', function () {
         id.should.String();
       });
       should.exist(r.headers['location']);
-      r.headers['location'].should.equal(pot.resolve('autos', '/apis/v/vehicles/' + b.id));
+      r.headers['location'].should.equal(pot.resolve('apis', '/v/vehicles/' + b.id));
       done();
     });
   });
